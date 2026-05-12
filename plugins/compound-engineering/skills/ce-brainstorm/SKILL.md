@@ -252,7 +252,12 @@ Write or update a requirements document only when the conversation produced dura
 
 For **Lightweight** brainstorms, keep the document compact. Skip document creation when the user only needs brief alignment and no durable decisions need to be preserved.
 
-**HTML emission.** If `OUTPUT_FORMAT=html` (resolved in Phase 0.0), OR if Phase 0.1 marked an existing `.html` sibling for re-render, compose the HTML rendering right after the markdown write — same path with `.html` extension. Read `references/html-output.md` for composition rules: invariants, precedence stack, content-shape questions, affordance idioms, fallback default style, agent-consumability rules, and the post-compose audit. Confirm with a second line: `HTML view written to <absolute path to .html>`. Markdown remains canonical; the HTML is a projection.
+**HTML emission.** Compose the HTML rendering right after the markdown write — same path with `.html` extension — when BOTH conditions hold:
+
+1. `OUTPUT_FORMAT` (resolved in Phase 0.0) is `html`, OR Phase 0.1 marked an existing `.html` sibling for re-render.
+2. The run is not in pipeline mode. Pipeline mode (LFG or any `disable-model-invocation` context) forces md-only emission regardless of CLI or config preference, including suppressing sibling re-render. The pipeline-mode override at Phase 0.0 is absolute.
+
+When both conditions hold, read `references/html-output.md` for composition rules: invariants, precedence stack, content-shape questions, affordance idioms, fallback default style, agent-consumability rules, and the post-compose audit. Confirm with a second line: `HTML view written to <absolute path to .html>`. Markdown remains canonical; the HTML is a projection.
 
 ### Phase 4: Handoff
 

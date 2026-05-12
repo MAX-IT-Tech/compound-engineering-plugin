@@ -22,7 +22,7 @@ The single-file invariant is preserved either way. Never emit a `<link rel="styl
 - **Single self-contained HTML5 file.** No companion `.css`, `.js`, or `.svg` files. CSS lives in `<style>`, SVG lives inline, images live as base64 data URIs or inline SVG.
 - **CDN webfonts permitted only with an offline-readable fallback font stack.** The doc must remain readable when the CDN is unreachable. A typical pattern: `font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif`.
 - **ASCII identifiers.** Class names, IDs, data attribute names are ASCII-only.
-- **Frontmatter preserved as `<script type="application/json" id="<skill>-frontmatter">`.** Round-trips to the source document's frontmatter keys. Escape `<` as `<` inside the JSON payload to prevent `</script>` injection from any value containing the literal substring.
+- **Frontmatter preserved as `<script type="application/json" id="<skill>-frontmatter">`.** Round-trips to the source document's frontmatter keys. Escape `<` as `&lt;` (HTML entity) inside the JSON payload to prevent `</script>` injection from any value containing the literal substring. The browser unescapes when reading the script tag's text content; downstream JSON parsers see clean characters.
 - **R-IDs, U-IDs, A-IDs, F-IDs, AE-IDs preserved as anchor IDs.** Use `id="r1"`, `id="u1"`, etc. The ID also appears as visible text in the heading or table cell so any reader (human or agent) finds it as text.
 
 ## DESIGN.md discovery

@@ -53,10 +53,20 @@ describe("html-output.md reference content invariants", () => {
     ).toBe(true)
   })
 
-  test("specifies < escape rule for </script> injection prevention", () => {
+  test("specifies < → &lt; escape rule for </script> injection prevention", () => {
+    // The reference text must literally show the HTML entity `&lt;` (not just
+    // mention the word "escape"). An earlier draft of this test allowed either
+    // and missed a no-op where the prose said "escape `<` as `<`" — both
+    // characters being the literal `<`. Require the entity itself.
     expect(
-      /&lt;|escape/i.test(REFERENCE),
-      "Reference must specify the < → &lt; escape rule to prevent </script> injection from frontmatter values.",
+      /&lt;/.test(REFERENCE),
+      "Reference must specify the HTML entity `&lt;` as the escape target. Writing 'escape `<` as `<`' is a no-op and was the bug this test now guards against.",
+    ).toBe(true)
+    // Also require the escape rule to appear in a sentence about <script>
+    // injection, so a stray &lt; somewhere unrelated wouldn't satisfy the test.
+    expect(
+      /&lt;[\s\S]{0,200}script|script[\s\S]{0,200}&lt;/i.test(REFERENCE),
+      "The `&lt;` escape mention must sit near a reference to `<script>` / `</script>` injection so the contract is unambiguous.",
     ).toBe(true)
   })
 

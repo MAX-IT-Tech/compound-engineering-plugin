@@ -32,13 +32,18 @@ If artifact-backed mode was used:
 - Clean up the temporary scratch directory after the plan is safely updated
 - If cleanup is not practical on the current platform, note where the artifacts were left
 
-**HTML composition.** If `OUTPUT_FORMAT=html` (resolved in SKILL.md Phase 0.0), OR if Phase 0.1 marked an existing `.html` sibling for re-render, compose the HTML rendering now — after all `.md` mutations in this run have settled (initial write, deepening synthesis, ce-doc-review `safe_auto` fixes). Read `references/html-output.md` for composition rules: invariants, precedence stack, content-shape questions, affordance idioms, fallback default style, agent-consumability rules, and the post-compose audit. Write the HTML to the same path as the `.md` with `.html` extension. Confirm with a second line:
+**HTML composition.** Compose the HTML rendering now — after all `.md` mutations in this run have settled (initial write, deepening synthesis, ce-doc-review `safe_auto` fixes) — when BOTH conditions hold:
+
+1. `OUTPUT_FORMAT` (resolved in SKILL.md Phase 0.0) is `html`, OR Phase 0.1 marked an existing `.html` sibling for re-render.
+2. The run is not in pipeline mode. Pipeline mode (LFG or any `disable-model-invocation` context) forces md-only emission regardless of CLI or config preference, including suppressing sibling re-render. The pipeline-mode override at Phase 0.0 is absolute: ce-work and downstream consumers always get markdown, and emitting an HTML sibling in pipeline runs would violate that guarantee even on resume.
+
+When both conditions hold, read `references/html-output.md` for composition rules: invariants, precedence stack, content-shape questions, affordance idioms, fallback default style, agent-consumability rules, and the post-compose audit. Write the HTML to the same path as the `.md` with `.html` extension. Confirm with a second line:
 
 ```text
 HTML view written to <absolute path to .html>
 ```
 
-If a later phase in this run mutates the `.md` again (HITL Proof resync), re-compose the HTML at that point so the view stays aligned with the markdown source.
+If a later phase in this run mutates the `.md` again (HITL Proof resync), re-compose the HTML at that point — same two-condition gate — so the view stays aligned with the markdown source.
 
 ## 5.4 Post-Generation Options
 
@@ -76,7 +81,7 @@ Based on selection (the bare per-option routing is also stated inline in the SKI
   Follow `references/hitl-review.md` in the ce-proof skill. It uploads the plan, prompts the user for review in Proof's web UI, ingests each thread by reading it fresh and replying in-thread, applies agreed edits as tracked suggestions, and syncs the final markdown back to the plan file atomically on proceed.
 
   When the ce-proof skill returns:
-  - `status: proceeded` with `localSynced: true` -> the plan on disk now reflects the review. Re-run `ce-doc-review` on the updated plan before re-rendering the menu — HITL can materially rewrite the plan body, so the prior ce-doc-review pass no longer covers the current file and section 5.3.8 requires a review before any handoff option is offered. If `OUTPUT_FORMAT=html` for this run (or an `.html` sibling was marked for re-render), also re-compose the HTML per section 5.3.9 before re-rendering the menu, since the markdown was just mutated. Then return to the post-generation options with the refreshed residual findings.
+  - `status: proceeded` with `localSynced: true` -> the plan on disk now reflects the review. Re-run `ce-doc-review` on the updated plan before re-rendering the menu — HITL can materially rewrite the plan body, so the prior ce-doc-review pass no longer covers the current file and section 5.3.8 requires a review before any handoff option is offered. Re-apply section 5.3.9's HTML composition rule before re-rendering the menu — the markdown was just mutated, and the rule's two-condition gate (HTML wanted AND not in pipeline mode) decides whether to re-compose. Then return to the post-generation options with the refreshed residual findings.
   - `status: proceeded` with `localSynced: false` -> the reviewed version lives in Proof at `docUrl` but the local copy is stale. Offer to pull the Proof doc to `localPath` using the ce-proof skill's Pull workflow. If the pull happened, re-run `ce-doc-review` on the pulled file before re-rendering the options (same 5.3.8 rationale — the local plan was materially updated by the pull). If the pull was declined, include a one-line note above the menu that `<localPath>` is stale vs. Proof — otherwise `Start /ce-work` or `Create Issue` will silently use the pre-review copy.
   - `status: done_for_now` -> the plan on disk may be stale if the user edited in Proof before leaving. Offer to pull the Proof doc to `localPath` so the local plan file stays in sync. If the pull happened, re-run `ce-doc-review` on the pulled file before re-rendering the options (same 5.3.8 rationale). If the pull was declined, include the stale-local note above the menu. `done_for_now` means the user stopped the HITL loop — it does not mean they ended the whole plan session; they may still want to start work or create an issue.
   - `status: aborted` -> fall back to the options without changes.
