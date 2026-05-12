@@ -638,11 +638,12 @@ After document review and final checks, print a one-line summary of the headless
 
 **Question:** "Plan ready at `<absolute path to plan>`. What would you like to do next?" (use absolute path so the reference is clickable in modern terminals)
 
-**Options (5 when actionable findings remain; option 2 dropped and remaining options renumbered otherwise — including FYI-only state). When `OUTPUT_FORMAT=html`, option 4 replaces "Open in Proof" with "Open in browser" (mutual exclusion — Proof and local browser serve overlapping review purposes, and the swap keeps the menu within its option cap):**
+**Options (5 when actionable findings remain; option 2 dropped and remaining options renumbered otherwise — including FYI-only state). Option 4 is mutually exclusive between two labels: render only the one matching `OUTPUT_FORMAT`. Proof operates on markdown plans and cannot ingest HTML, so HTML-mode users see the local-browser option instead. The single-label rendering keeps the menu within its option cap and prevents a confusing "show both" outcome.**
 1. **Start `/ce-work`** (recommended) - Begin implementing this plan in the current session
 2. **Run deeper doc review** - Walk through the remaining findings interactively (full ce-doc-review walkthrough)
 3. **Create Issue** - Create a tracked issue from this plan in your configured issue tracker (GitHub or Linear)
-4. **Open in Proof (web app) — review and comment to iterate with the agent** — *or, when `OUTPUT_FORMAT=html`,* **Open in browser** - Open the `.html` sibling locally for review and sharing
+4. **Open in Proof (web app) — review and comment to iterate with the agent** - Open the doc in Every's Proof editor, iterate with the agent via comments, or copy a link to share with others. **Render this label only when `OUTPUT_FORMAT=md`.**
+4. **Open in browser** - Open the `.html` sibling locally for review and sharing. **Render this label only when `OUTPUT_FORMAT=html`** (replaces "Open in Proof" at the same slot).
 5. **Done for now** - Pause; the plan file is saved and can be resumed later
 
 **Routing.** Act on the user's selection — do not just announce it. Elaborate sub-flows (Proof HITL state machine, Issue Creation tracker detection, post-HITL resync) live in `references/plan-handoff.md`.
