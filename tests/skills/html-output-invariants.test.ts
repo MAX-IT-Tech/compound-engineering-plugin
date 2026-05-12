@@ -179,4 +179,68 @@ describe("html-output.md reference content invariants", () => {
       "Reference must include a Post-compose audit section listing common slips to verify before returning.",
     ).toBe(true)
   })
+
+  // Below: invariants added after observing a real-world plan that diverged
+  // from the dogfood. The earlier reference under-prescribed on these four
+  // axes, so different runs produced visibly different artifacts even with
+  // identical reference content loaded. See the cloak-browser plan in the
+  // cli-printing-press repo (2026-05-12) for the motivating example.
+
+  test("warns that markdown is content source, not structural authority", () => {
+    expect(
+      /Markdown is the content source.*not the structural authority|re-derive structure from semantic content|not a 1:1 transformation/i.test(REFERENCE),
+      "Reference must tell the agent that markdown's structural choices (lists vs sections vs tables) are presentation defaults, NOT semantic ground truth. Without this, agents inherit markdown's bullet-list rendering for content that should be tabular.",
+    ).toBe(true)
+  })
+
+  test("requires <table> for uniform-shape content (5+ items)", () => {
+    // The cloak-browser plan rendered 13 requirements as a styled bullet list
+    // because the markdown source rendered them that way. The reference must
+    // make this a hard rule, not a soft suggestion answerable as "no".
+    const reqIdx = REFERENCE.search(/Uniform-shape rule|5\+ items.*uniform structure|uniform structure.*5\+/i)
+    expect(
+      reqIdx,
+      "Reference must include a hard uniform-shape rule: 5+ items sharing the same field structure render as <table>, regardless of how the markdown source structured them.",
+    ).toBeGreaterThan(-1)
+    // Within ~600 chars of that rule, expect at least one example of the
+    // uniform shapes ('ID + body' / 'name + value' / 'label + description' /
+    // 'decision + rationale') so the agent understands what counts.
+    const region = REFERENCE.slice(reqIdx, reqIdx + 800)
+    expect(
+      /ID \+ body|name \+ value|label \+ description|decision \+ rationale/.test(region),
+      "The uniform-shape rule must name at least one concrete example shape ('ID + body', 'name + value', 'label + description', 'decision + rationale') so the agent recognizes the pattern.",
+    ).toBe(true)
+  })
+
+  test("requires sticky TOC sidebar for long docs", () => {
+    expect(
+      /sticky TOC|sticky.*sidebar|navigation aid.*long/i.test(REFERENCE),
+      "Reference must include sticky TOC sidebar as an affordance idiom for docs over a section/length threshold. Single-column-only on a long plan is a real UX miss.",
+    ).toBe(true)
+    // The trigger threshold must be stated concretely so the agent can apply
+    // it without guessing.
+    expect(
+      /5\+ top-level sections|400.{0,10}lines|400-line|long doc/i.test(REFERENCE),
+      "Sticky-TOC affordance must name a concrete trigger threshold (e.g., '5+ top-level sections' or '~400 lines') so the agent can decide whether to include one.",
+    ).toBe(true)
+  })
+
+  test("requires reverse traceability for ID-anchored content", () => {
+    expect(
+      /reverse[\s-]?traceability|reverse lookup|covered by|references.*column|downstream references|downstream IDs/i.test(REFERENCE),
+      "Reference must call out reverse traceability for ID-anchored items (R-IDs in Requirements should show which U-IDs satisfy each one when rendered as a table).",
+    ).toBe(true)
+  })
+
+  test("permits inline JS for active-section TOC tracking", () => {
+    // The no-JS-framework rule should not be read as banning a small inline
+    // IntersectionObserver. The sticky-TOC affordance needs an active-section
+    // indicator, and the cleanest implementation is ~15 lines of vanilla JS.
+    // The reference must clarify the boundary so the agent doesn't ship a
+    // dead-static TOC.
+    expect(
+      /IntersectionObserver|inline.*script.*acceptable|active[\s-]section.*script|active.*tracking/i.test(REFERENCE),
+      "Reference must clarify that a small inline <script> for active-section tracking / anchor-permalink behavior is acceptable. The no-JS-framework rule applies to React/Vue/etc., not to ~15 lines of vanilla observer code.",
+    ).toBe(true)
+  })
 })

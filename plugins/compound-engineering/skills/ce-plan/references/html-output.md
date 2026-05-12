@@ -45,21 +45,28 @@ The HTML re-renders only inside the same skill run that mutated the markdown. Ac
 
 ## Content-shape questions
 
+**Markdown is the content source, not the structural authority.** The markdown source uses lists, sections, and tables as its presentation defaults. HTML composition is not a 1:1 transformation — re-derive structure from semantic content per section. If markdown rendered 13 requirements as a bulleted list, that does NOT mean HTML must render them as a list; ask whether the semantic content (13 items sharing uniform `ID + body` shape) deserves a different rendering.
+
 Read the markdown content and ask, per section:
 
-- Is anything tabular or comparative? Would a `<table>` scan faster than the list or prose currently expressing it?
+- **Uniform-shape rule (load-bearing).** If 5+ items in a section share uniform structure (`ID + body`, `name + value`, `label + description`, `decision + rationale`, `risk + mitigation`), render as `<table>` regardless of how the markdown source structured them. Lists with chip-IDs are visually appealing but tables scan faster at that scale and make scanning across rows of the same field trivial. Tables also unlock additional columns (status, traceability, severity) that a list cannot accommodate cleanly.
+- Is anything else tabular or comparative? Would a `<table>` scan faster than the list or prose currently expressing it?
 - Is anything spatial, relational, or sequential that prose flattens? Would an inline SVG diagram land faster?
 - Are there decision points or branches that a matrix or flowchart would scan faster than nested bullets?
 - Is anything carrying variance in status, severity, or readiness that color or visual emphasis would land?
 - Is anything genuinely benefitting from interactivity (collapsibles, native disclosure), or is the proposed interactivity decoration?
 - Are there repeating rich-content cards (Implementation Units, finding cards, persona reviews) where secondary subsections would scan better as collapsibles than as always-expanded blocks?
+- **Are ID-anchored items reverse-traceable?** Requirements (R-IDs) are typically referenced FROM Implementation Units (U-IDs); the doc reads forward easily but reverse lookup ("which units satisfy R3?") requires scanning every unit. When rendering Requirements as a table, add a column showing which downstream IDs reference each row (e.g., R3 → `U2, U5, U7`). Same pattern for any ID-anchored content with downstream references.
+- **Is the doc long enough to need navigation aids?** Count top-level sections and total line count. If the doc has 5+ top-level sections OR exceeds ~400 lines, include a sticky TOC sidebar (see Affordance idioms). Single-column scroll-only on a long plan is a real UX miss.
 
 Phrase each answer in terms of THIS artifact's content, not in the abstract. A doc with one unit and short sub-content does not need collapsibles; a doc with twelve persona-finding cards probably does.
 
 ## Affordance idioms
 
-Reach for these idioms when content warrants. None are required.
+Reach for these idioms when content warrants. None are required, except where the content-shape questions above name a hard rule.
 
+- **Sticky TOC sidebar with active-section indicator** when the doc has 5+ top-level sections OR exceeds ~400 lines. Two-column layout on desktop (`grid-template-columns: minmax(200px, 240px) minmax(0, 1fr)`), sticky `<nav>` on the left with section anchors, collapses to top of page on mobile (`@media (max-width: 900px) { .layout { display: block; } nav.toc { position: static; } }`). Pair with a small inline `IntersectionObserver` script that toggles an `.active` class on the matching nav anchor as the user scrolls — single-file invariant preserved because the script is inline. A bare `<script>` for active-section tracking and anchor-permalink behavior is acceptable; the no-JS-framework rule applies to React/Vue/etc., not to ~15 lines of vanilla observer code.
+- **`<table>` for uniform-shape content (5+ items sharing the same field structure).** Required per the content-shape questions, not optional. Add a "covered by" or "references" column for reverse traceability when ID-anchored rows have downstream references.
 - **`<details>` + `<summary>`** for collapsible subsections inside repeating rich-content cards. Keep the card's headline metadata (Goal, primary IDs, file lists) always visible above the collapsibles; wrap each secondary subsection (Approach, Test scenarios, Verification) in its own `<details>` so readers expand only what they need. Native HTML, no JS required, single-file invariant preserved.
 - **Inline SVG flowcharts / sequences / data-flow** for branching or temporal logic that prose flattens. Place overrides, exceptions, and side-effects spatially separated from the main flow with a labeled connector or a "FIRST CHECK" banner — spatial position must match logical scope.
 - **Two-column lists** for compact heterogeneous bibliographies (Sources & References) when items are short.
