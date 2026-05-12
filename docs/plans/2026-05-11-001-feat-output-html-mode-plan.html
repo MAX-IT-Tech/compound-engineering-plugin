@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Add output:html mode to ce-plan and ce-brainstorm</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: #fafaf9;
+      --surface: #ffffff;
+      --surface-tint: #f5f5f4;
+      --surface-warm: #fbf8f3;
+      --text: #1a1a1a;
+      --text-muted: #525252;
+      --text-subtle: #737373;
+      --border: #e7e5e4;
+      --border-strong: #d4d4d4;
+      --accent: #0d7d6b;
+      --accent-soft: #d1f1ea;
+      --accent-text: #0a5d4f;
+      --warning: #b45309;
+      --warning-soft: #fef3c7;
+      --danger: #b91c1c;
+      --danger-soft: #fee2e2;
+      --code-bg: #f5f5f4;
+      --code-text: #1a1a1a;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 1px 2px rgba(0, 0, 0, 0.03);
+      --radius: 8px;
+      --radius-sm: 5px;
+      --font-body: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f0f10;
+        --surface: #18181b;
+        --surface-tint: #1f1f23;
+        --surface-warm: #1c1a17;
+        --text: #f5f5f5;
+        --text-muted: #a3a3a3;
+        --text-subtle: #737373;
+        --border: #2a2a2d;
+        --border-strong: #3f3f46;
+        --accent: #5eead4;
+        --accent-soft: #0e3a32;
+        --accent-text: #99f6e4;
+        --warning: #facc15;
+        --warning-soft: #3f2c0d;
+        --danger: #fca5a5;
+        --danger-soft: #3f1d1d;
+        --code-bg: #1f1f23;
+        --code-text: #e7e5e4;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4), 0 1px 2px rgba(0, 0, 0, 0.25);
+      }
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 16px;
+      line-height: 1.65;
+      font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration-thickness: 0.08em;
+      text-underline-offset: 0.18em;
+      transition: color 0.15s ease;
+    }
+    a:hover { color: var(--accent-text); }
+
+    /* Header */
+    header.doc-header {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 56px 32px 32px;
+    }
+
+    .eyebrow {
+      margin: 0 0 12px;
+      color: var(--accent-text);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    h1.doc-title {
+      margin: 0;
+      font-size: clamp(2rem, 4vw, 3rem);
+      font-weight: 700;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+
+    .summary {
+      max-width: 760px;
+      margin: 20px 0 0;
+      color: var(--text-muted);
+      font-size: 1.075rem;
+      line-height: 1.6;
+    }
+
+    .pill-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 24px;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      border: 1px solid var(--border-strong);
+      border-radius: 999px;
+      padding: 2px 12px;
+      background: var(--surface);
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      font-weight: 500;
+      box-shadow: var(--shadow);
+    }
+    .pill-status-active,
+    .pill-type-feat {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border-strong));
+      background: var(--accent-soft);
+      color: var(--accent-text);
+    }
+    .pill-key {
+      color: var(--text-subtle);
+      font-weight: 400;
+      margin-right: 4px;
+    }
+
+    /* Layout */
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(200px, 240px) minmax(0, 1fr);
+      gap: 40px;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 16px 32px 80px;
+    }
+
+    nav.toc {
+      position: sticky;
+      top: 24px;
+      align-self: start;
+      max-height: calc(100vh - 48px);
+      overflow-y: auto;
+      padding: 4px;
+    }
+
+    .toc-title {
+      margin: 0 0 12px;
+      padding: 0 8px;
+      color: var(--text-subtle);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .toc ol { list-style: none; margin: 0; padding: 0; }
+    .toc li { margin: 0; }
+
+    .toc a {
+      display: block;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all 0.12s ease;
+    }
+    .toc a:hover {
+      background: var(--surface-tint);
+      color: var(--text);
+    }
+    .toc a.indent {
+      padding-left: 24px;
+      font-size: 0.82rem;
+      color: var(--text-subtle);
+    }
+    .toc a.active {
+      background: var(--surface-tint);
+      color: var(--accent-text);
+      border-left-color: var(--accent);
+      font-weight: 600;
+    }
+    .toc a.indent.active {
+      font-weight: 500;
+    }
+
+    main { min-width: 0; }
+
+    section.doc-section {
+      margin-bottom: 36px;
+      scroll-margin-top: 72px;
+    }
+    section.doc-section:first-child { margin-top: 0; }
+
+    /* H2 — section title — large + accent underline + permalink */
+    h2.section-title {
+      margin: 0 0 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text);
+      scroll-margin-top: 72px;
+      position: relative;
+    }
+
+    /* H3 — section subhead — accent left rule + small caps */
+    h3 {
+      margin: 32px 0 14px;
+      padding-left: 12px;
+      border-left: 3px solid var(--accent);
+      font-size: 1.0rem;
+      font-weight: 600;
+      color: var(--accent-text);
+      letter-spacing: 0.02em;
+      text-transform: none;
+      scroll-margin-top: 72px;
+    }
+    /* H3 inside unit cards uses the H4 treatment instead */
+    article.unit h3 { padding-left: 0; border-left: none; color: var(--text); }
+
+    /* H4 — inline section label inside cards — uppercase */
+    h4 {
+      margin: 22px 0 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent-text);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    p {
+      margin: 0 0 14px;
+      color: var(--text);
+      max-width: 72ch;
+    }
+
+    ul, ol {
+      margin: 0 0 14px;
+      padding-left: 24px;
+      max-width: 72ch;
+    }
+    li { margin-bottom: 6px; }
+    li > strong { color: var(--text); }
+
+    /* Code */
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 0.12em 0.4em;
+      border-radius: 4px;
+      border: 1px solid var(--border);
+    }
+
+    pre {
+      margin: 16px 0;
+      padding: 16px 18px;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow-x: auto;
+      font-size: 0.85rem;
+      line-height: 1.55;
+    }
+    pre code {
+      background: transparent;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+    }
+
+    /* Permalink glyphs */
+    .permalink {
+      margin-left: 0.4em;
+      color: var(--text-subtle);
+      text-decoration: none;
+      font-weight: 400;
+      opacity: 0;
+      transition: opacity 0.15s ease, color 0.15s ease;
+      font-size: 0.85em;
+    }
+    h2.section-title:hover .permalink,
+    article.unit h3:hover .permalink,
+    tr:hover .row-permalink {
+      opacity: 1;
+    }
+    .permalink:hover,
+    .row-permalink:hover { color: var(--accent); }
+
+    .row-permalink {
+      margin-left: 0.3em;
+      color: var(--text-subtle);
+      text-decoration: none;
+      opacity: 0;
+      transition: opacity 0.15s ease, color 0.15s ease;
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+    }
+
+    /* Tables */
+    .table-wrap {
+      margin: 16px 0;
+      overflow-x: auto;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      background: var(--surface);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.93rem;
+    }
+    thead { background: var(--surface-tint); }
+    th {
+      text-align: left;
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 0.78rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      border-bottom: 1px solid var(--border);
+    }
+    td {
+      padding: 13px 16px;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr { scroll-margin-top: 84px; }
+    tbody tr:hover { background: var(--surface-tint); }
+
+    td.r-id, td.u-id, td.risk-cell {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--accent-text);
+      white-space: nowrap;
+      width: 1%;
+    }
+
+    td.coverage {
+      width: 1%;
+      white-space: nowrap;
+    }
+    td.coverage a {
+      display: inline-block;
+      margin-right: 4px;
+      padding: 1px 6px;
+      background: var(--accent-soft);
+      color: var(--accent-text);
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    td.coverage a:hover { filter: brightness(1.1); }
+
+    /* Implementation unit cards */
+    article.unit {
+      margin: 16px 0;
+      padding: 24px 28px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-card);
+      scroll-margin-top: 72px;
+    }
+
+    article.unit h3 {
+      margin-top: 0;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text);
+      position: relative;
+    }
+
+    article.unit h3 .u-id {
+      display: inline-block;
+      margin-right: 8px;
+      padding: 2px 8px;
+      background: var(--accent-soft);
+      color: var(--accent-text);
+      border-radius: 5px;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+    }
+
+    .unit-meta {
+      display: grid;
+      grid-template-columns: minmax(140px, auto) 1fr;
+      gap: 4px 16px;
+      margin: 16px 0 20px;
+      padding: 12px 16px;
+      background: var(--surface-tint);
+      border-radius: var(--radius-sm);
+      font-size: 0.92rem;
+    }
+    .unit-meta dt {
+      color: var(--text-subtle);
+      font-weight: 500;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .unit-meta dd { margin: 0; color: var(--text); }
+    .unit-meta dd code { font-size: 0.85em; }
+
+    article.unit h4 {
+      margin-top: 24px;
+      margin-bottom: 8px;
+    }
+
+    /* Collapsible subsections inside unit cards */
+    .unit-detail {
+      margin-top: 6px;
+      border-top: 1px solid var(--border);
+    }
+    .unit-detail:first-of-type {
+      margin-top: 20px;
+    }
+    .unit-detail > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 2px 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--accent-text);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      user-select: none;
+      transition: color 0.12s ease;
+    }
+    .unit-detail > summary::-webkit-details-marker { display: none; }
+    .unit-detail > summary::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-right: 2px solid currentColor;
+      border-bottom: 2px solid currentColor;
+      transform: rotate(-45deg);
+      transition: transform 0.18s ease;
+      opacity: 0.65;
+      flex-shrink: 0;
+    }
+    .unit-detail[open] > summary::before {
+      transform: rotate(45deg);
+    }
+    .unit-detail > summary:hover { color: var(--accent); }
+    .unit-detail > summary:hover::before { opacity: 1; }
+    .unit-detail[open] > *:not(summary) {
+      padding-bottom: 10px;
+    }
+    .unit-detail[open] > summary {
+      padding-bottom: 6px;
+    }
+
+    /* Variety: alternative section treatments */
+
+    /* Open Questions — warm-tinted card with no surrounding white box */
+    section.open-questions {
+      padding: 20px 28px;
+      background: var(--surface-warm);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+    }
+    section.open-questions h2.section-title { border-bottom-color: var(--border-strong); }
+
+    /* Scope deferred subsection */
+    .scope-deferred {
+      margin-top: 20px;
+      padding: 16px 20px;
+      background: var(--surface-tint);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-sm);
+    }
+    .scope-deferred h3 {
+      margin-top: 0;
+      padding-left: 0;
+      border-left: none;
+    }
+
+    /* Sources — compact two-column on wide screens */
+    section.sources ul {
+      max-width: none;
+      columns: 2;
+      column-gap: 32px;
+      column-rule: 1px solid var(--border);
+      padding-left: 20px;
+    }
+    section.sources li {
+      break-inside: avoid;
+      margin-bottom: 10px;
+    }
+    @media (max-width: 900px) {
+      section.sources ul { columns: 1; }
+    }
+
+    /* Diagram */
+    figure.diagram {
+      margin: 24px 0;
+      padding: 24px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    figure.diagram svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+    figure.diagram figcaption {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-align: center;
+      font-style: italic;
+    }
+
+    .diagram-node-bg { fill: var(--surface-tint); stroke: var(--border-strong); }
+    .diagram-node-fg { fill: var(--accent-soft); stroke: var(--accent); }
+    .diagram-node-warning { fill: var(--warning-soft); stroke: var(--warning); }
+    .diagram-text { fill: var(--text); font-family: var(--font-body); font-size: 13px; font-weight: 500; }
+    .diagram-text-muted { fill: var(--text-muted); font-family: var(--font-body); font-size: 11px; }
+    .diagram-text-strong { fill: var(--warning); font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+    .diagram-edge { stroke: var(--text-muted); stroke-width: 1.5; fill: none; }
+    .diagram-edge-warning { stroke: var(--warning); stroke-width: 1.5; fill: none; stroke-dasharray: 5 4; }
+
+    /* Footer */
+    footer.doc-footer {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 24px 32px 64px;
+      color: var(--text-subtle);
+      font-size: 0.85rem;
+      border-top: 1px solid var(--border);
+    }
+    .gen-banner {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+    .gen-banner code {
+      font-size: 0.8rem;
+      background: var(--surface-tint);
+    }
+    .gen-banner .gen-label {
+      color: var(--text-subtle);
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 600;
+    }
+
+    /* Mobile */
+    @media (max-width: 900px) {
+      header.doc-header { padding: 36px 20px 24px; }
+      .layout { display: block; padding: 12px 20px 60px; }
+      nav.toc {
+        position: static;
+        max-height: none;
+        margin-bottom: 32px;
+        padding: 16px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+      }
+      article.unit { padding: 18px 20px; }
+      section.open-questions { padding: 18px 20px; }
+      .unit-meta { grid-template-columns: 1fr; gap: 8px; }
+      .unit-meta dt { margin-top: 4px; }
+      th, td { padding: 10px 12px; font-size: 0.88rem; }
+      footer.doc-footer { padding-left: 20px; padding-right: 20px; }
+      .permalink, .row-permalink { opacity: 1; }
+    }
+
+    /* Print */
+    @media print {
+      nav.toc, footer.doc-footer { display: none; }
+      .layout { display: block; padding: 0; }
+      article.unit, .table-wrap, figure.diagram { box-shadow: none; break-inside: avoid; }
+      body { font-size: 11pt; }
+      .permalink, .row-permalink { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="doc-header">
+    <p class="eyebrow">ce-plan · 2026-05-11</p>
+    <h1 class="doc-title">Add output:html mode to ce-plan and ce-brainstorm</h1>
+    <p class="summary">
+      Add an <code>output:html</code> / <code>output:md</code> argument (default <code>md</code>) to <code>ce-plan</code> and <code>ce-brainstorm</code>
+      so they emit a single self-contained HTML rendering alongside the markdown when the user opts in.
+      Defaults come from <code>.compound-engineering/config.local.yaml</code>. HTML composition is agent-driven from a small
+      set of content-shape questions and a minimal opinionated fallback style — no hardcoded template grammar.
+      An optional <code>DESIGN.md</code> taste hook lets each repo override style.
+    </p>
+    <div class="pill-row" aria-label="Plan frontmatter">
+      <span class="pill pill-type-feat"><span class="pill-key">type</span>feat</span>
+      <span class="pill pill-status-active"><span class="pill-key">status</span>active</span>
+      <span class="pill"><span class="pill-key">date</span>2026-05-11</span>
+    </div>
+    <script type="application/json" id="plan-frontmatter">
+{
+  "title": "Add output:html mode to ce-plan and ce-brainstorm",
+  "type": "feat",
+  "status": "active",
+  "date": "2026-05-11",
+  "source": "docs/plans/2026-05-11-001-feat-output-html-mode-plan.md",
+  "generated_at": "2026-05-11T22:00:00Z"
+}
+    </script>
+  </header>
+
+  <div class="layout">
+
+    <nav class="toc" aria-label="Table of contents">
+      <p class="toc-title">On this page</p>
+      <ol>
+        <li><a href="#problem-frame">Problem Frame</a></li>
+        <li><a href="#requirements">Requirements</a></li>
+        <li><a href="#scope-boundaries">Scope Boundaries</a></li>
+        <li><a href="#context-research">Context &amp; Research</a></li>
+        <li><a href="#key-technical-decisions">Key Technical Decisions</a></li>
+        <li><a href="#open-questions">Open Questions</a></li>
+        <li><a href="#implementation-units">Implementation Units</a></li>
+        <li><a href="#u1" class="indent">U1 — html-output.md reference</a></li>
+        <li><a href="#u2" class="indent">U2 — ce-plan</a></li>
+        <li><a href="#u3" class="indent">U3 — ce-brainstorm</a></li>
+        <li><a href="#u4" class="indent">U4 — config template</a></li>
+        <li><a href="#u5" class="indent">U5 — invariant tests</a></li>
+        <li><a href="#u6" class="indent">U6 — docs sync</a></li>
+        <li><a href="#system-wide-impact">System-Wide Impact</a></li>
+        <li><a href="#risks-dependencies">Risks &amp; Dependencies</a></li>
+        <li><a href="#sources">Sources &amp; References</a></li>
+      </ol>
+    </nav>
+
+    <main>
+
+      <section class="doc-section" id="problem-frame">
+        <h2 class="section-title">Problem Frame<a href="#problem-frame" class="permalink" aria-label="Permalink">#</a></h2>
+        <p>
+          Long plans and requirements docs routinely cross the threshold where Markdown rendering hurts readability
+          and shareability — Thariq Shihipar's HTML-effectiveness essay frames this clearly, and two recent
+          ce-plan PRs (#765, #766) shipped fixes for exactly this pain in the markdown Implementation Units template.
+          The plugin has no current way to produce a richer document surface for review, sharing, and consumption.
+          A community PR (#809) attempted to add this and produced useful inputs we can learn from, but the design
+          we want is a smaller, less prescriptive layer that lets the agent express HTML affordances per artifact
+          rather than locking a single visual grammar.
+        </p>
+      </section>
+
+      <section class="doc-section" id="requirements">
+        <h2 class="section-title">Requirements<a href="#requirements" class="permalink" aria-label="Permalink">#</a></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" style="width: 64px;">ID</th>
+                <th scope="col">Requirement</th>
+                <th scope="col" style="width: 140px;">Covered by</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="r1"><td class="r-id">R1<a class="row-permalink" href="#r1">#</a></td><td><code>output:html</code> and <code>output:md</code> are accepted as arguments to <code>ce-plan</code> and <code>ce-brainstorm</code>, parsed using the same literal-prefix-strip convention already used for <code>mode:</code>.</td><td class="coverage"><a href="#u2">U2</a><a href="#u3">U3</a><a href="#u6">U6</a></td></tr>
+              <tr id="r2"><td class="r-id">R2<a class="row-permalink" href="#r2">#</a></td><td>Default output format is read from <code>.compound-engineering/config.local.yaml</code> (new optional keys <code>plan_output</code> and <code>brainstorm_output</code>); the CLI argument overrides config; the built-in default is <code>md</code>. Missing or invalid config falls through silently.</td><td class="coverage"><a href="#u2">U2</a><a href="#u3">U3</a><a href="#u4">U4</a></td></tr>
+              <tr id="r3"><td class="r-id">R3<a class="row-permalink" href="#r3">#</a></td><td>When <code>output:html</code>, the skill writes BOTH the markdown file (as today) AND a single self-contained HTML file at the parallel path (<code>-plan.html</code> / <code>-requirements.html</code>).</td><td class="coverage"><a href="#u1">U1</a><a href="#u2">U2</a><a href="#u3">U3</a></td></tr>
+              <tr id="r4"><td class="r-id">R4<a class="row-permalink" href="#r4">#</a></td><td>The HTML file is fully self-contained: inline CSS, inline SVG, inline images. No companion <code>.css</code> / <code>.js</code> / <code>.svg</code> files. CDN webfonts are permitted only with a complete offline-readable fallback font stack.</td><td class="coverage"><a href="#u1">U1</a></td></tr>
+              <tr id="r5"><td class="r-id">R5<a class="row-permalink" href="#r5">#</a></td><td>Default styling is opinionated, neutral, and delightful — sized for genuine readability across HTML's affordances (tables, callouts, diagrams, light interactivity) — without bloat. The agent picks affordances per artifact using content-shape questions, not a fixed template.</td><td class="coverage"><a href="#u1">U1</a></td></tr>
+              <tr id="r6"><td class="r-id">R6<a class="row-permalink" href="#r6">#</a></td><td>Optional <code>DESIGN.md</code> (worktree root, <code>docs/DESIGN.md</code>, <code>.compound-engineering/DESIGN.md</code>, first match wins) is the user-controlled taste hook. When present, the agent reads it and threads its preferences into the artifact. Absent → fallback default.</td><td class="coverage"><a href="#u1">U1</a></td></tr>
+              <tr id="r7"><td class="r-id">R7<a class="row-permalink" href="#r7">#</a></td><td>Frontmatter is preserved in the HTML as a <code>&lt;script type="application/json"&gt;</code> block (with safe escaping for <code>&lt;/script&gt;</code> injection) so downstream consumers can round-trip it.</td><td class="coverage"><a href="#u1">U1</a><a href="#u3">U3</a></td></tr>
+              <tr id="r8"><td class="r-id">R8<a class="row-permalink" href="#r8">#</a></td><td>R-IDs and U-IDs (and the equivalent A/F/AE IDs in ce-brainstorm) are preserved as stable anchor IDs in the HTML so requirements traceability survives the format change.</td><td class="coverage"><a href="#u1">U1</a><a href="#u3">U3</a></td></tr>
+              <tr id="r9"><td class="r-id">R9<a class="row-permalink" href="#r9">#</a></td><td>Pipeline mode (LFG and any <code>disable-model-invocation</code> context) FORCES <code>output:md</code> regardless of config, so ce-work always has its markdown input.</td><td class="coverage"><a href="#u2">U2</a><a href="#u3">U3</a></td></tr>
+              <tr id="r10"><td class="r-id">R10<a class="row-permalink" href="#r10">#</a></td><td>HTML composes AFTER ce-doc-review's <code>safe_auto</code> fixes have been applied to the <code>.md</code>, so the first HTML emission already reflects autofixes. Within a single skill run, HTML re-renders whenever <code>.md</code> is mutated (deepen, doc-review, HITL Proof resync).</td><td class="coverage"><a href="#u2">U2</a><a href="#u3">U3</a></td></tr>
+              <tr id="r11"><td class="r-id">R11<a class="row-permalink" href="#r11">#</a></td><td>Headless and interactive modes both honor <code>output:html</code> when set; headless mode skips the post-generation menu as today.</td><td class="coverage"><a href="#u2">U2</a><a href="#u3">U3</a></td></tr>
+              <tr id="r12"><td class="r-id">R12<a class="row-permalink" href="#r12">#</a></td><td>The post-generation menu offers an "Open in browser" option in place of "Open in Proof" when <code>output:html</code> was the chosen output (mutual exclusion keeps the menu within its option cap). <code>/ce-work</code> (ce-plan) and <code>/ce-plan</code> (ce-brainstorm) remain the recommended option — HTML is treated as a richer review/share surface, not a review gate.</td><td class="coverage"><a href="#u2">U2</a><a href="#u3">U3</a></td></tr>
+              <tr id="r13"><td class="r-id">R13<a class="row-permalink" href="#r13">#</a></td><td>Tests assert invariants only — HTML5 doctype, single-file (no external resources except optional fonts), frontmatter JSON round-trip, anchor ID preservation. No styling assertions, no snapshot tests.</td><td class="coverage"><a href="#u5">U5</a></td></tr>
+              <tr id="r14"><td class="r-id">R14<a class="row-permalink" href="#r14">#</a></td><td>The HTML-rendering reference content is duplicated byte-for-byte between <code>ce-plan/references/</code> and <code>ce-brainstorm/references/</code>, enforced by the existing <code>tests/compound-support-files.test.ts</code> pattern. No <code>_shared/</code> directory.</td><td class="coverage"><a href="#u5">U5</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section" id="scope-boundaries">
+        <h2 class="section-title">Scope Boundaries<a href="#scope-boundaries" class="permalink" aria-label="Permalink">#</a></h2>
+        <ul>
+          <li>v1 covers <code>ce-plan</code> and <code>ce-brainstorm</code> only. No HTML support for <code>ce-code-review</code>, <code>ce-product-pulse</code>, <code>ce-doc-review</code>, <code>ce-sessions</code>, <code>ce-compound</code>, <code>ce-debug</code>, <code>ce-strategy</code>, <code>ce-ideate</code>, or other document-producing skills.</li>
+          <li>No teaching <code>ce-work</code> (or any other consumer skill) to read HTML — markdown remains the workflow input format. HTML is a projection of the markdown.</li>
+          <li>No two-way interactivity (sliders, copy-back-to-Claude buttons mentioned in the source essay) — v1 is static HTML.</li>
+          <li>No upload-to-S3 or shareable-link generation.</li>
+          <li>No locked anchor-ID glossary, pill-class scheme, hardcoded CSS theme of 250+ lines, or fixed SVG diagram primitives — the agent picks affordances.</li>
+          <li>No "Implementation Note: re-run without --html" callout in the artifact (process exhaust).</li>
+          <li>No <code>_shared/</code> directory or other cross-skill shared-content mechanism — the plugin's documented duplicate-per-skill rule applies.</li>
+          <li>No CLI converter changes — the <code>argument-hint</code> propagates verbatim through existing converter logic.</li>
+        </ul>
+
+        <div class="scope-deferred">
+          <h3>Deferred to Follow-Up Work</h3>
+          <ul>
+            <li>HTML output for <code>ce-code-review</code> and <code>ce-product-pulse</code> — likely high-value next candidates; revisit after this lands and after measuring uptake.</li>
+            <li>Teaching <code>ce-work</code> to consume HTML plans (would require frontmatter extraction from the embedded JSON and section-by-anchor reading; significant lift).</li>
+            <li>Behavior contract tests for callsites that auto-invoke <code>ce-plan</code> / <code>ce-brainstorm</code> with <code>output:</code> (only relevant once orchestration cares about output format).</li>
+            <li>A health-check warning in <code>ce-setup</code> that flags unknown sibling keys (e.g., <code>plan-output</code> vs <code>plan_output</code>) — generic key-typo detection, not specific to this feature.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="doc-section" id="context-research">
+        <h2 class="section-title">Context &amp; Research<a href="#context-research" class="permalink" aria-label="Permalink">#</a></h2>
+
+        <h3>Relevant Code and Patterns</h3>
+        <ul>
+          <li><code>plugins/compound-engineering/skills/ce-plan/SKILL.md</code> — Phase 5.2 write step (lines 543–559), filename convention (lines 328–332), post-generation menu (lines 613–628).</li>
+          <li><code>plugins/compound-engineering/skills/ce-plan/references/plan-template.md</code> — frontmatter shape, section order.</li>
+          <li><code>plugins/compound-engineering/skills/ce-plan/references/plan-handoff.md</code> — Phase 5.3.8 / 5.4 routing and menu rendering rules.</li>
+          <li><code>plugins/compound-engineering/skills/ce-brainstorm/SKILL.md</code> — Phase 3 write step, Phase 4 handoff.</li>
+          <li><code>plugins/compound-engineering/skills/ce-brainstorm/references/requirements-capture.md</code> — write mechanics, frontmatter, Actors/Flows/Acceptance Examples sections.</li>
+          <li><code>plugins/compound-engineering/skills/ce-brainstorm/references/handoff.md</code> — menu shape, 4-vs-5-option rendering rule.</li>
+          <li><code>plugins/compound-engineering/skills/ce-doc-review/SKILL.md:18-20</code> — canonical <code>mode:</code> token-parsing prose to mirror for <code>output:</code>.</li>
+          <li><code>plugins/compound-engineering/skills/ce-compound/SKILL.md:28</code> — second <code>mode:</code> parsing example with mode-table.</li>
+          <li><code>plugins/compound-engineering/skills/ce-work-beta/SKILL.md:46</code> — canonical config pre-resolution pattern with <code>__NO_CONFIG__</code> sentinel.</li>
+          <li><code>plugins/compound-engineering/skills/ce-product-pulse/SKILL.md:55-59</code> — config-key consumption pattern.</li>
+          <li><code>plugins/compound-engineering/skills/ce-setup/references/config-template.yaml</code> — flat <code>key: value</code> style with commented examples.</li>
+          <li><code>plugins/compound-engineering/skills/ce-compound/</code> and <code>ce-compound-refresh/</code> — precedent for byte-for-byte duplicated reference content, enforced by <code>tests/compound-support-files.test.ts</code>.</li>
+        </ul>
+
+        <h3>Institutional Learnings</h3>
+        <ul>
+          <li><code>docs/solutions/skill-design/post-menu-routing-belongs-inline-2026-04-28.md</code> — Per-mode routing for always-fire options belongs inline in SKILL.md.</li>
+          <li><code>docs/solutions/skill-design/script-first-skill-architecture.md</code> — DOES NOT apply here. The "core value is the model's judgment" exception holds; deterministic rendering would defeat the purpose.</li>
+          <li><code>docs/solutions/best-practices/conditional-visual-aids-in-generated-documents-2026-03-29.md</code> — Use content-pattern triggers, not size/depth gates. Prose-is-authoritative invariant.</li>
+          <li><code>docs/solutions/integrations/colon-namespaced-names-break-windows-paths-2026-03-26.md</code> — Title-derived path components route through <code>sanitizePathName()</code>.</li>
+          <li><code>plugins/compound-engineering/AGENTS.md</code> &mdash; cross-skill duplication, config reading, reference inclusion, runtime-vs-authoring distinction.</li>
+          <li>User memory <code>feedback_headless_argument_hint.md</code> — <code>output:html</code> belongs in <code>argument-hint</code> for human discoverability.</li>
+          <li>User memory <code>feedback_no_external_plugin_references.md</code> — Don't cite other plugins or PR #809 in plan body, commit messages, or PR description.</li>
+          <li>User memory <code>feedback_hr_separators.md</code> — Use <code>---</code> between top-level sections in dense docs.</li>
+        </ul>
+
+        <h3>External References</h3>
+        <ul>
+          <li>Thariq Shihipar, <em>"Using Claude Code: The Unreasonable Effectiveness of HTML"</em> — the source thinking. The agent-judgment-per-artifact approach with minimal prescription is taken directly from this essay.</li>
+        </ul>
+      </section>
+
+      <section class="doc-section" id="key-technical-decisions">
+        <h2 class="section-title">Key Technical Decisions<a href="#key-technical-decisions" class="permalink" aria-label="Permalink">#</a></h2>
+
+        <p>The <code>output:</code> resolution flow is the load-bearing entry point. Pipeline mode is checked first as a hard override; the remaining signals are walked in precedence order until one matches.</p>
+
+        <figure class="diagram" aria-label="Output format resolution flow">
+          <svg viewBox="0 0 880 460" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="resolution-title">
+            <title id="resolution-title">Output format resolution flow</title>
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#737373"/>
+              </marker>
+              <marker id="arrow-warn" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+                <path d="M 0 0 L 10 5 L 0 10 z" fill="#b45309"/>
+              </marker>
+            </defs>
+
+            <!-- FIRST CHECK label -->
+            <text x="20" y="28" class="diagram-text-strong">FIRST CHECK · overrides everything below</text>
+
+            <!-- Pipeline override row -->
+            <rect x="20" y="40" width="360" height="64" rx="8" class="diagram-node-bg"
+                  style="stroke-dasharray: 5 4;" stroke="#b45309" fill-opacity="0.6"></rect>
+            <text x="200" y="68" text-anchor="middle" class="diagram-text">Pipeline mode active?</text>
+            <text x="200" y="86" text-anchor="middle" class="diagram-text-muted">(LFG · disable-model-invocation)</text>
+
+            <text x="408" y="68" class="diagram-text-muted">yes</text>
+            <line x1="380" y1="72" x2="480" y2="72" class="diagram-edge-warning" marker-end="url(#arrow-warn)"></line>
+
+            <rect x="480" y="40" width="380" height="64" rx="8" class="diagram-node-warning"></rect>
+            <text x="670" y="68" text-anchor="middle" class="diagram-text">Force <tspan font-family="JetBrains Mono, monospace" font-weight="600">md</tspan> · stop</text>
+            <text x="670" y="86" text-anchor="middle" class="diagram-text-muted">orphan HTML in pipeline is pure cost</text>
+
+            <text x="195" y="124" class="diagram-text-muted">no — continue ↓</text>
+            <line x1="200" y1="104" x2="200" y2="146" class="diagram-edge" marker-end="url(#arrow)"></line>
+
+            <!-- Divider -->
+            <line x1="20" y1="158" x2="860" y2="158" stroke="#d4d4d4" stroke-dasharray="2 4"></line>
+            <text x="20" y="178" class="diagram-text-strong" style="fill: #525252;">Precedence: CLI · config · default</text>
+
+            <!-- Step 1: CLI -->
+            <rect x="20" y="194" width="360" height="64" rx="8" class="diagram-node-bg"></rect>
+            <text x="200" y="222" text-anchor="middle" class="diagram-text">Argument starts with <tspan font-family="JetBrains Mono, monospace">output:</tspan> ?</text>
+            <text x="200" y="240" text-anchor="middle" class="diagram-text-muted">(case-insensitive · unknown → drop + note)</text>
+
+            <text x="408" y="222" class="diagram-text-muted">yes</text>
+            <line x1="380" y1="226" x2="480" y2="226" class="diagram-edge" marker-end="url(#arrow)"></line>
+            <rect x="480" y="194" width="380" height="64" rx="8" class="diagram-node-fg"></rect>
+            <text x="670" y="226" text-anchor="middle" class="diagram-text">Use CLI value · stop</text>
+            <text x="670" y="244" text-anchor="middle" class="diagram-text-muted">bare <tspan font-family="JetBrains Mono, monospace">output:</tspan> is a no-op</text>
+
+            <text x="195" y="278" class="diagram-text-muted">no — continue ↓</text>
+            <line x1="200" y1="258" x2="200" y2="300" class="diagram-edge" marker-end="url(#arrow)"></line>
+
+            <!-- Step 2: config -->
+            <rect x="20" y="308" width="360" height="64" rx="8" class="diagram-node-bg"></rect>
+            <text x="200" y="336" text-anchor="middle" class="diagram-text">Config has <tspan font-family="JetBrains Mono, monospace">plan_output</tspan> or <tspan font-family="JetBrains Mono, monospace">brainstorm_output</tspan> ?</text>
+            <text x="200" y="354" text-anchor="middle" class="diagram-text-muted">(missing/invalid → fall through silently)</text>
+
+            <text x="408" y="336" class="diagram-text-muted">yes</text>
+            <line x1="380" y1="340" x2="480" y2="340" class="diagram-edge" marker-end="url(#arrow)"></line>
+            <rect x="480" y="308" width="380" height="64" rx="8" class="diagram-node-fg"></rect>
+            <text x="670" y="344" text-anchor="middle" class="diagram-text">Use config value · stop</text>
+
+            <text x="195" y="392" class="diagram-text-muted">no — continue ↓</text>
+            <line x1="200" y1="372" x2="200" y2="414" class="diagram-edge" marker-end="url(#arrow)"></line>
+
+            <!-- Step 3: default -->
+            <rect x="20" y="422" width="360" height="36" rx="8" class="diagram-node-fg"></rect>
+            <text x="200" y="445" text-anchor="middle" class="diagram-text">Use default: <tspan font-family="JetBrains Mono, monospace" font-weight="600">md</tspan></text>
+          </svg>
+          <figcaption>Output format resolution: pipeline override first (full-flow), then arg → config → default.</figcaption>
+        </figure>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" style="width: 38%;">Decision</th>
+                <th scope="col">Rationale</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Agent-driven HTML composition, not script-driven</strong></td>
+                <td>The skill's core value is per-artifact judgment about which HTML affordances fit which content (tabular, sequential, branching, interactive). A deterministic transformer would produce uniform output that defeats the entire point. The reference gives the agent content-shape questions and an opinionated fallback style; the agent composes per artifact.</td>
+              </tr>
+              <tr>
+                <td><strong>Token-parsing: literal-prefix-only</strong></td>
+                <td>Only <code>output:</code> and <code>mode:</code> (and <code>delegate:</code> where applicable) prefixes are consumed as flags; other <code>&lt;word&gt;:&lt;word&gt;</code> tokens — including conventional commit prefixes like <code>feat:</code>, <code>fix:</code>, <code>chore:</code> that may appear inside a feature description — pass through verbatim. State explicitly so implementers don't generalize.</td>
+              </tr>
+              <tr>
+                <td><strong>Precedence: CLI &gt; config &gt; default (<code>md</code>)</strong></td>
+                <td>Mirrors established convention. Unknown values (e.g., <code>output:pdf</code>) drop the token and emit a one-line note above the post-generation menu — case-insensitive (<code>output:HTML</code> → <code>html</code>), bare <code>output:</code> is a no-op. Trade tiny chat noise for non-silent failure.</td>
+              </tr>
+              <tr>
+                <td><strong>Pipeline mode forces <code>md</code></strong></td>
+                <td>When invoked from LFG or any <code>disable-model-invocation</code> context, the skill ignores CLI and config preferences and writes only markdown. <code>ce-work</code> consumes markdown; emitting orphan HTML in pipeline runs is pure cost.</td>
+              </tr>
+              <tr>
+                <td><strong>HTML composes AFTER <code>safe_auto</code> fixes land on <code>.md</code></strong></td>
+                <td>Inside a single run, HTML re-renders whenever <code>.md</code> is mutated (deepen, doc-review, HITL Proof resync). Prevents the user from reviewing pre-fix HTML when the markdown has already been corrected.</td>
+              </tr>
+              <tr>
+                <td><strong>Worktree-root only for config and DESIGN.md</strong></td>
+                <td>Use <code>git rev-parse --show-toplevel</code>. No fall-through to main checkout (AGENTS.md documents why <code>git-common-dir</code> derivation is hostile to Claude Code's shell-safety check). Users on worktrees who want HTML defaults add config and DESIGN.md there.</td>
+              </tr>
+              <tr>
+                <td><strong>Per-skill duplicate, not <code>_shared/</code></strong></td>
+                <td>Reference content is duplicated byte-for-byte between <code>ce-plan/references/html-output.md</code> and <code>ce-brainstorm/references/html-output.md</code>. Enforced by extending <code>tests/compound-support-files.test.ts</code>. The plugin's documented cross-skill rule prohibits shared mechanisms.</td>
+              </tr>
+              <tr>
+                <td><strong>Reference inclusion via backtick path, not <code>@</code>-inline</strong></td>
+                <td>The HTML-output reference will run &gt;150 lines (fallback CSS + content-shape questions + invariants + DESIGN.md handling). Backtick path is the documented default for files of this size, keeping SKILL.md tokens low.</td>
+              </tr>
+              <tr>
+                <td><strong>Frontmatter preserved as <code>&lt;script type="application/json"&gt;</code></strong></td>
+                <td>Escape <code>&lt;</code> as <code>&amp;lt;</code> in the JSON payload to prevent <code>&lt;/script&gt;</code> injection from any frontmatter value containing the literal substring. Values become JSON-native types. Documented as a transform rule in the reference.</td>
+              </tr>
+              <tr>
+                <td><strong>Sequence number <code>NNN</code> counts <code>.md</code> files only</strong></td>
+                <td><code>.html</code> files mirror whatever <code>NNN</code> the <code>.md</code> got. Otherwise re-running on the same day could double-count.</td>
+              </tr>
+              <tr>
+                <td><strong>HTML committed by default</strong></td>
+                <td>Users who prefer ephemeral HTML can add <code>docs/plans/*.html</code> and <code>docs/brainstorms/*.html</code> to <code>.gitignore</code> — flagged as an opt-out in Phase 5.2 note. The HTML is small and self-contained, so diffs are reviewable as rendered artifacts.</td>
+              </tr>
+              <tr>
+                <td><strong>Defer to user-stated preferences without re-reading agent-instruction files</strong></td>
+                <td>Skill explicitly notes user preferences in <code>DESIGN.md</code>, conversation, or agent-instruction files supersede skill defaults. Does NOT instruct reading those files — they're already in the system prompt. <code>DESIGN.md</code> is the only file the skill actively reads. Precedence: conversation &gt; <code>DESIGN.md</code> &gt; skill default.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section open-questions" id="open-questions">
+        <h2 class="section-title">Open Questions<a href="#open-questions" class="permalink" aria-label="Permalink">#</a></h2>
+
+        <h3>Resolved During Planning</h3>
+        <ul>
+          <li><em>ce-brainstorm → ce-plan handoff propagation:</em> ce-plan re-resolves its own <code>plan_output</code> config independently. The handoff does NOT auto-propagate the <code>output:</code> arg from brainstorm to plan. Rationale: keeps each skill's config self-contained; users who want HTML for both set both keys. Asymmetric output (<code>requirements.html</code> + <code>plan.md</code>) is acceptable.</li>
+          <li><em>Recommended option in HTML-mode post-generation menu:</em> stays as <code>/ce-work</code> for ce-plan and <code>/ce-plan</code> for ce-brainstorm. "Open in browser" replaces "Open in Proof" in HTML mode (mutual exclusion).</li>
+          <li><em>Unknown <code>output:</code> value handling:</em> drop the token, emit one-line note above menu, fall back to default. Not loud-fail.</li>
+        </ul>
+
+        <h3>Deferred to Implementation</h3>
+        <ul>
+          <li>Exact font and color choices for the fallback default style. The "opinionated, neutral, delightful" target leaves the specific palette to implementation; the reference will name a single tasteful default. <code>DESIGN.md</code> overrides.</li>
+          <li>Whether to add a stable token-parsing test that covers both <code>mode:</code> and <code>output:</code> together, or to keep the new test scoped to <code>output:</code>. Decide during U5 based on what existing skill tests look like.</li>
+          <li>Whether the post-generation <code>Doc review applied N fixes</code> summary line should explicitly note when HTML was re-rendered alongside.</li>
+        </ul>
+      </section>
+
+      <section class="doc-section" id="implementation-units">
+        <h2 class="section-title">Implementation Units<a href="#implementation-units" class="permalink" aria-label="Permalink">#</a></h2>
+
+        <article class="unit" id="u1">
+          <h3><span class="u-id">U1</span> Author the shared <code>html-output.md</code> reference content<a href="#u1" class="permalink" aria-label="Permalink">#</a></h3>
+          <dl class="unit-meta">
+            <dt>Goal</dt><dd>Produce the small agent-facing reference that captures invariants, content-shape questions, DESIGN.md discovery rules, fallback default style, and the JSON-frontmatter embed contract. Duplicated byte-for-byte across both skills.</dd>
+            <dt>Requirements</dt><dd><a href="#r3">R3</a>, <a href="#r4">R4</a>, <a href="#r5">R5</a>, <a href="#r6">R6</a>, <a href="#r7">R7</a>, <a href="#r8">R8</a></dd>
+            <dt>Dependencies</dt><dd>None</dd>
+            <dt>Files</dt><dd>
+              <ul style="margin: 0; padding-left: 18px;">
+                <li>Create: <code>plugins/compound-engineering/skills/ce-plan/references/html-output.md</code></li>
+                <li>Create: <code>plugins/compound-engineering/skills/ce-brainstorm/references/html-output.md</code> (byte-for-byte identical)</li>
+              </ul>
+            </dd>
+          </dl>
+
+          <details class="unit-detail"><summary>Approach</summary>
+          <ul>
+            <li>Open with the precedence sentence: user instructions in <code>DESIGN.md</code>, conversation, or already-loaded agent-instruction files supersede everything below.</li>
+            <li>Hard invariants (single self-contained HTML; inline CSS; inline SVG; inline images; CDN webfonts only with fallback stack; ASCII identifiers; frontmatter as <code>&lt;script type="application/json"&gt;</code> with <code>&lt;</code> → <code>&amp;lt;</code> escape; R-IDs / U-IDs / A-IDs / F-IDs / AE-IDs preserved as anchor IDs).</li>
+            <li>DESIGN.md discovery: try worktree root, then <code>docs/DESIGN.md</code>, then <code>.compound-engineering/DESIGN.md</code>. First match wins. Read once at HTML compose time.</li>
+            <li>Content-shape questions framed as agent prompts: "Is anything here tabular or comparative? Is anything spatial, relational, or sequential that prose flattens? Are there decision points or branches a matrix scans faster? Is anything carrying variance in status, severity, or readiness that color or emphasis would land? Is anything genuinely benefitting from interactivity?"</li>
+            <li>Post-compose audit checks (verify each before returning): heading levels visually distinct; no template placeholders leaked; anchored IDs have visible permalinks; staleness banner present; at least 1 in 5 sections visually varies from the default card; diagram spatial logic matches scope; table column widths set for content.</li>
+            <li>Fallback default style: ~40–60 lines of CSS, opinionated and tasteful — modular type scale, generous line-height, max-width container, subtle accent, prefers-color-scheme dark variant, small-screen breakpoint. One webfont with full fallback stack.</li>
+            <li>Composition timing rule: HTML composes AFTER ce-doc-review's <code>safe_auto</code> fixes have applied to <code>.md</code>; re-compose whenever <code>.md</code> is re-written in the same run.</li>
+            <li>Anti-patterns to call out: do not invent a fixed visual template; do not lock pill classes or anchor schemes beyond R/U/A/F/AE; no JS framework dependencies; no process-exhaust callouts.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Test scenarios</summary>
+          <ul>
+            <li>Happy path: <code>tests/compound-support-files.test.ts</code> extension confirms the two files match byte-for-byte.</li>
+            <li>Edge case: track file length; backtick inclusion required for &gt;150 lines.</li>
+          </ul>
+        </details></article>
+
+        <article class="unit" id="u2">
+          <h3><span class="u-id">U2</span> Add <code>output:</code> mode to ce-plan<a href="#u2" class="permalink" aria-label="Permalink">#</a></h3>
+          <dl class="unit-meta">
+            <dt>Goal</dt><dd>Wire <code>output:html</code> / <code>output:md</code> into ce-plan: token parsing, config-read pre-resolution, precedence resolution, write-branch for <code>.html</code> sibling, post-generation menu addition, pipeline-mode force-<code>md</code> rule.</dd>
+            <dt>Requirements</dt><dd><a href="#r1">R1</a>, <a href="#r2">R2</a>, <a href="#r3">R3</a>, <a href="#r9">R9</a>, <a href="#r10">R10</a>, <a href="#r11">R11</a>, <a href="#r12">R12</a></dd>
+            <dt>Dependencies</dt><dd><a href="#u1">U1</a></dd>
+            <dt>Files</dt><dd>
+              <ul style="margin: 0; padding-left: 18px;">
+                <li>Modify: <code>plugins/compound-engineering/skills/ce-plan/SKILL.md</code></li>
+                <li>Modify: <code>plugins/compound-engineering/skills/ce-plan/references/plan-handoff.md</code></li>
+                <li>Modify: <code>tests/skills/ce-plan-handoff-routing.test.ts</code> (existing test pins inline routing per menu option; new "Open in browser" routing must land in its assertions)</li>
+                <li>Test: <code>tests/skills/ce-plan-output-mode.test.ts</code></li>
+              </ul>
+            </dd>
+            <dt>Execution note</dt><dd>Start with a failing test that verifies argument precedence resolution on a representative cell; flesh out implementation against the table.</dd>
+          </dl>
+
+          <details class="unit-detail"><summary>Approach</summary>
+          <ul>
+            <li>Add <code>!</code>backtick pre-resolution config read at the top of SKILL.md, mirroring <code>ce-work-beta/SKILL.md:46</code>:
+              <pre><code>!`cat "$(git rev-parse --show-toplevel 2&gt;/dev/null)/.compound-engineering/config.local.yaml" 2&gt;/dev/null || echo '__NO_CONFIG__'`</code></pre>
+            </li>
+            <li>Add an "Output Mode" subsection under Phase 0 that resolves <code>OUTPUT_FORMAT</code> per the precedence flow above.</li>
+            <li>Update <code>argument-hint</code> to include <code>[output:html]</code> (the non-default; <code>md</code> is the default and noise).</li>
+            <li>Update the token-stripping convention to name both <code>mode:</code> and <code>output:</code> as literal-prefix flag tokens.</li>
+            <li>Phase 5.2 write: always write <code>.md</code> first. After Phase 5.3.8's <code>safe_auto</code> fixes have applied, if <code>OUTPUT_FORMAT == html</code>, compose the HTML by reading <code>references/html-output.md</code> and following its guidance against the just-written <code>.md</code>.</li>
+            <li>Deepen fast path (Phase 0.1): after deepening edits land in <code>.md</code>, detect whether an <code>.html</code> sibling exists; if so, re-compose. Same on HITL Proof resync.</li>
+            <li>Post-generation menu: when <code>OUTPUT_FORMAT == html</code>, "Open in browser" replaces "Open in Proof" (mutual exclusion preserves the option cap). <code>/ce-work</code> stays recommended.</li>
+            <li>Unknown <code>output:</code> value emits a one-line note above the menu: <code>Ignored unknown output: value '&lt;value&gt;' — defaulting to md.</code></li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Test scenarios</summary>
+          <ul>
+            <li>Happy path: <code>output:html</code> → <code>OUTPUT_FORMAT == html</code>, both files written, menu shows "Open in browser".</li>
+            <li>Happy path: no argument, no config → <code>md</code>, only <code>.md</code> written.</li>
+            <li>Edge case: <code>output:HTML</code> (uppercase) → case-insensitive match, <code>html</code> selected.</li>
+            <li>Edge case: bare <code>output:</code> → no-op, default applies.</li>
+            <li>Edge case: <code>output:pdf</code> → token dropped, default applies, note emitted.</li>
+            <li>Edge case: <code>output:html mode:headless</code> (both present, order varies) → both honored, no menu shown.</li>
+            <li>Edge case: feature description containing <code>fix:</code> → passes through verbatim.</li>
+            <li>Edge case: deepen on existing <code>.md</code> whose <code>.html</code> sibling exists → re-rendered.</li>
+            <li>Edge case: pipeline mode with <code>plan_output: html</code> in config → <code>.md</code> only.</li>
+            <li>Error path: config file unreadable / missing → silent fallthrough.</li>
+            <li>Error path: typo (<code>plan-output</code>) → silently ignored, default applies.</li>
+            <li>Integration: ce-doc-review applies <code>safe_auto</code> fix → HTML composed afterward reflects the fix.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Verification</summary>
+          <ul>
+            <li><code>bun test</code> passes the new test file and existing ce-plan tests.</li>
+            <li>Manual smoke: <code>output:html</code> produces both <code>.md</code> and <code>.html</code>.</li>
+            <li>Skill's argument-hint visibly mentions <code>output:html</code>.</li>
+          </ul>
+        </details></article>
+
+        <article class="unit" id="u3">
+          <h3><span class="u-id">U3</span> Add <code>output:</code> mode to ce-brainstorm<a href="#u3" class="permalink" aria-label="Permalink">#</a></h3>
+          <dl class="unit-meta">
+            <dt>Goal</dt><dd>Mirror U2 in ce-brainstorm: same parsing, same precedence, same HTML-after-md rule, same handoff-menu addition. Adjusted for ce-brainstorm's lighter frontmatter and 6-option handoff menu shape.</dd>
+            <dt>Requirements</dt><dd><a href="#r1">R1</a>, <a href="#r2">R2</a>, <a href="#r3">R3</a>, <a href="#r7">R7</a>, <a href="#r8">R8</a>, <a href="#r9">R9</a>, <a href="#r10">R10</a>, <a href="#r11">R11</a>, <a href="#r12">R12</a></dd>
+            <dt>Dependencies</dt><dd><a href="#u1">U1</a>, <a href="#u2">U2</a></dd>
+            <dt>Files</dt><dd>
+              <ul style="margin: 0; padding-left: 18px;">
+                <li>Modify: <code>plugins/compound-engineering/skills/ce-brainstorm/SKILL.md</code></li>
+                <li>Modify: <code>plugins/compound-engineering/skills/ce-brainstorm/references/handoff.md</code></li>
+                <li>Modify: <code>plugins/compound-engineering/skills/ce-brainstorm/references/requirements-capture.md</code> (frontmatter shape if needed)</li>
+                <li>Test: <code>tests/skills/ce-brainstorm-output-mode.test.ts</code></li>
+              </ul>
+            </dd>
+          </dl>
+
+          <details class="unit-detail"><summary>Approach</summary>
+          <ul>
+            <li>Add the same <code>!</code>backtick config pre-resolution, reading <code>brainstorm_output</code> instead of <code>plan_output</code>.</li>
+            <li>Same four-step resolution (arg → config → default → pipeline-force-md).</li>
+            <li>Update <code>argument-hint</code> to include <code>[output:html]</code>.</li>
+            <li>Phase 3 (write) and Phase 4 (handoff): same dual-emit behavior. Compose HTML if <code>OUTPUT_FORMAT == html</code>.</li>
+            <li>Handoff menu currently up to 6 options; "Open in browser" replaces "Open in Proof" in HTML mode (same mutual-exclusion rule).</li>
+            <li>Frontmatter parity: ce-brainstorm uses <code>date</code> + <code>topic</code>. Embed the same shape as JSON. A-IDs / F-IDs / AE-IDs preserved as anchor IDs.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Test scenarios</summary>
+          <ul>
+            <li>Happy path: <code>output:html</code> → both <code>requirements.md</code> and <code>requirements.html</code> written.</li>
+            <li>Edge cases: case-insensitive, bare, unknown — same as U2.</li>
+            <li>Edge case: pipeline mode forces <code>md</code>.</li>
+            <li>Edge case: brainstorm → plan handoff with brainstorm in <code>html</code> mode and config setting <code>plan_output: md</code> → ce-plan re-resolves; <code>brainstorm.html</code> + <code>plan.md</code> is the acceptable result.</li>
+            <li>Edge case: A-IDs / F-IDs / AE-IDs preserved as anchor IDs.</li>
+            <li>Static analysis: menu rule documents the mutual exclusion; argument-hint includes <code>output:html</code>; token-parsing prose names both <code>mode:</code> and <code>output:</code>.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Verification</summary>
+          <ul>
+            <li><code>bun test</code> passes the new file and existing ce-brainstorm tests.</li>
+            <li>Manual smoke: brainstorm produces both files and opens cleanly.</li>
+          </ul>
+        </details></article>
+
+        <article class="unit" id="u4">
+          <h3><span class="u-id">U4</span> Add config keys to ce-setup template<a href="#u4" class="permalink" aria-label="Permalink">#</a></h3>
+          <dl class="unit-meta">
+            <dt>Goal</dt><dd>Make <code>plan_output</code> and <code>brainstorm_output</code> discoverable through the standard <code>ce-setup</code> config-bootstrap path.</dd>
+            <dt>Requirements</dt><dd><a href="#r2">R2</a></dd>
+            <dt>Dependencies</dt><dd><a href="#u2">U2</a>, <a href="#u3">U3</a> (so key names are settled)</dd>
+            <dt>Files</dt><dd>Modify: <code>plugins/compound-engineering/skills/ce-setup/references/config-template.yaml</code></dd>
+          </dl>
+
+          <details class="unit-detail"><summary>Approach</summary>
+          <ul>
+            <li>Add a new section header (e.g., <code># --- Output format ---</code>) below existing sections.</li>
+            <li>Add two commented examples in the same flat <code>key: value</code> style:
+              <pre><code># plan_output: html              # md | html (default: md)
+# brainstorm_output: html        # md | html (default: md)</code></pre>
+            </li>
+            <li>Add a short comment block explaining that <code>html</code> writes a self-contained HTML rendering alongside the markdown; markdown stays source of truth; see <code>DESIGN.md</code> for styling.</li>
+            <li>No change to <code>ce-setup/SKILL.md</code>. Template is always-refreshed into <code>config.local.example.yaml</code>; existing users see new keys on next <code>/ce-setup</code>.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Test scenarios</summary>
+          <ul>
+            <li>Happy path: <code>bun run release:validate</code> passes (template additions don't change manifest counts).</li>
+            <li>Static analysis: keys present in template; commented out by default; allowed values documented in line comment.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Verification</summary>
+          <ul>
+            <li><code>bun test</code> and <code>bun run release:validate</code> both pass.</li>
+            <li>Manual: <code>/ce-setup</code> in a fresh project produces <code>config.local.example.yaml</code> with new keys.</li>
+          </ul>
+        </details></article>
+
+        <article class="unit" id="u5">
+          <h3><span class="u-id">U5</span> Add invariant tests for HTML output<a href="#u5" class="permalink" aria-label="Permalink">#</a></h3>
+          <dl class="unit-meta">
+            <dt>Goal</dt><dd>Pin invariants that must hold for the new feature without locking visual style. Tests assert STRUCTURE, not appearance.</dd>
+            <dt>Requirements</dt><dd><a href="#r13">R13</a>, <a href="#r14">R14</a></dd>
+            <dt>Dependencies</dt><dd><a href="#u1">U1</a>, <a href="#u2">U2</a>, <a href="#u3">U3</a></dd>
+            <dt>Files</dt><dd>
+              <ul style="margin: 0; padding-left: 18px;">
+                <li>Create: <code>tests/skills/html-output-invariants.test.ts</code> (shared invariant assertions about the duplicated reference)</li>
+                <li>Modify: <code>tests/compound-support-files.test.ts</code> (extend byte-for-byte duplication check to include both <code>html-output.md</code> files)</li>
+              </ul>
+              <p style="margin-top: 8px; font-size: 0.88rem; color: var(--text-subtle);">
+                Note: <code>tests/skills/ce-plan-output-mode.test.ts</code> and <code>tests/skills/ce-brainstorm-output-mode.test.ts</code> are created under <a href="#u2">U2</a> and <a href="#u3">U3</a> respectively (per-skill assertions live with their owning unit). U5 only owns the shared invariants file and the duplication-check extension.
+              </p>
+            </dd>
+          </dl>
+
+          <details class="unit-detail"><summary>Approach</summary>
+          <ul>
+            <li><code>html-output-invariants.test.ts</code> asserts static contents of <code>html-output.md</code> carry the hard invariants: <code>"single self-contained"</code>, <code>"inline CSS"</code>, <code>"no companion"</code>, <code>"&lt;script type=\"application/json\"&gt;"</code>, the <code>&lt;</code> escape rule, DESIGN.md path order, the precedence sentence, the content-shape questions block. Regex assertions, not snapshots.</li>
+            <li><code>compound-support-files.test.ts</code> extension adds the two <code>html-output.md</code> files as a byte-for-byte pair; drift fails CI.</li>
+            <li>Per-skill assertions in U2/U3's test files: argument-hint contains <code>output:html</code>; token-parsing prose mentions <code>output:</code>; menu inline-routing exists; pipeline-force-md rule present.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Test scenarios</summary>
+          <ul>
+            <li>Happy path: three new test files pass under <code>bun test</code>.</li>
+            <li>Edge case: drift between the two <code>html-output.md</code> files fails the byte-for-byte test.</li>
+            <li>Edge case: removing <code>output:html</code> from argument-hint fails the per-skill static check.</li>
+            <li>Edge case: removing the pipeline-force-md rule from SKILL.md fails the per-skill check.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Verification</summary>
+          <ul>
+            <li><code>bun test</code> reports all new tests passing.</li>
+            <li>Intentional drift fails the duplication test.</li>
+          </ul>
+        </details></article>
+
+        <article class="unit" id="u6">
+          <h3><span class="u-id">U6</span> Sync user-facing docs<a href="#u6" class="permalink" aria-label="Permalink">#</a></h3>
+          <dl class="unit-meta">
+            <dt>Goal</dt><dd>Update public-facing surfaces that mention ce-plan and ce-brainstorm so the new mode is discoverable.</dd>
+            <dt>Dependencies</dt><dd><a href="#u2">U2</a>, <a href="#u3">U3</a></dd>
+            <dt>Files</dt><dd>
+              <ul style="margin: 0; padding-left: 18px;">
+                <li>Modify: <code>plugins/compound-engineering/README.md</code></li>
+                <li>Modify: <code>docs/skills/ce-plan.md</code></li>
+                <li>Modify: <code>docs/skills/ce-brainstorm.md</code></li>
+              </ul>
+            </dd>
+          </dl>
+
+          <details class="unit-detail"><summary>Approach</summary>
+          <ul>
+            <li>README Core Workflow table rows for ce-plan / ce-brainstorm: amend the description to mention <code>output:html</code> (concise; the table is dense).</li>
+            <li><code>docs/skills/ce-plan.md</code> and <code>docs/skills/ce-brainstorm.md</code>: update only the parts that became inaccurate per the AGENTS.md "Skill Documentation" rule. One-line mention of <code>output:html</code> in "What it does"; sentence on the HTML-as-shareable-projection model in Use Cases or FAQ.</li>
+            <li>Update component counts only if they shift (they shouldn't).</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Test scenarios</summary>
+          <ul>
+            <li>Static analysis: <code>bun run release:validate</code> passes (no version bumps, no manifest drift).</li>
+            <li>README table renders correctly when previewed.</li>
+          </ul>
+
+          </details><details class="unit-detail"><summary>Verification</summary>
+          <ul>
+            <li><code>bun test</code> and <code>bun run release:validate</code> both pass.</li>
+            <li>README changes don't bloat the table row.</li>
+          </ul>
+        </details></article>
+      </section>
+
+      <section class="doc-section" id="system-wide-impact">
+        <h2 class="section-title">System-Wide Impact<a href="#system-wide-impact" class="permalink" aria-label="Permalink">#</a></h2>
+        <ul>
+          <li><strong>Interaction graph:</strong> ce-plan and ce-brainstorm are direct user entry-points; the new arg/config layer fronts both. Downstream chain (ce-plan → ce-doc-review → ce-work) remains markdown-driven. ce-setup is touched via <code>config-template.yaml</code> only.</li>
+          <li><strong>Error propagation:</strong> Config-read failures fall through silently to default. Argument parse failures (unknown value) drop the token and emit a one-line note above the menu. HTML composition failure within the agent's authoring step would be an in-flight error visible in chat — not a silent failure.</li>
+          <li><strong>State lifecycle risks:</strong> Stale <code>.html</code> sibling after <code>.md</code> mutation is the main hazard. Mitigated by the "re-render whenever <code>.md</code> is mutated within the same run" rule. Across multi-run lifecycles (user edits <code>.md</code> by hand outside the skill), the <code>.html</code> will drift — acceptable for v1; surfaced as a known limitation.</li>
+          <li><strong>API surface parity:</strong> The <code>output:</code> arg convention should be applied consistently if extended to future skills. The literal-prefix-strip rule (<code>mode:</code>, <code>output:</code>, <code>delegate:</code>) is the existing convention this plan reinforces.</li>
+          <li><strong>Integration coverage:</strong> Pipeline (LFG) integration; brainstorm → plan handoff with mismatched config; deepen fast path with sibling re-render — all surfaced in test scenarios above.</li>
+          <li><strong>Unchanged invariants:</strong> The markdown plan / requirements format is unchanged. ce-work, ce-doc-review, and the Proof HITL flow continue to operate on markdown. <code>argument-hint</code> additions are additive, not breaking.</li>
+        </ul>
+      </section>
+
+      <section class="doc-section" id="risks-dependencies">
+        <h2 class="section-title">Risks &amp; Dependencies<a href="#risks-dependencies" class="permalink" aria-label="Permalink">#</a></h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" style="width: 45%;">Risk</th>
+                <th scope="col">Mitigation</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Agent composes HTML that violates the single-file invariant (e.g., emits a <code>&lt;link rel="stylesheet" href="..."&gt;</code>)</td><td>Invariants stated in <code>html-output.md</code>; static-analysis tests assert the invariants exist in the reference; users who see a violation can re-prompt or report it.</td></tr>
+              <tr><td>Stale <code>.html</code> after multi-run edits to <code>.md</code> outside the skill</td><td>Acceptable v1 limitation; mention in user-facing skill doc that HTML is regenerated only when the skill runs.</td></tr>
+              <tr><td>Drift between the two duplicated <code>html-output.md</code> files</td><td>Enforced by <code>tests/compound-support-files.test.ts</code> extension; CI catches divergence.</td></tr>
+              <tr><td>Menu overflow when adding "Open in browser" pushes total options over the AGENTS.md narrow-exception cap</td><td>Default: "Open in browser" mutually excludes "Open in Proof" in HTML mode. Cap honored.</td></tr>
+              <tr><td><code>&lt;/script&gt;</code> injection from frontmatter values containing the literal substring</td><td><code>&lt;</code> → <code>&amp;lt;</code> escape rule in the JSON embed, documented in the reference.</td></tr>
+              <tr><td>Webfont CDN goes down or is blocked → user sees fallback font</td><td>This is the entire point of the fallback stack — fonts degrade gracefully, document is still readable.</td></tr>
+              <tr><td>DESIGN.md or config in main checkout invisible to worktrees</td><td>Existing repo-wide convention (config.local.yaml has the same property); users on worktrees can add their own. Documented in <code>html-output.md</code>.</td></tr>
+              <tr><td>Token-parsing convention drift between <code>mode:</code> and <code>output:</code></td><td>Both rules co-located in the same parsing-prose paragraph in each SKILL.md; tests assert both names are present.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="doc-section sources" id="sources">
+        <h2 class="section-title">Sources &amp; References<a href="#sources" class="permalink" aria-label="Permalink">#</a></h2>
+        <ul>
+          <li><code>plugins/compound-engineering/skills/ce-plan/SKILL.md</code> — current ce-plan skill</li>
+          <li><code>plugins/compound-engineering/skills/ce-brainstorm/SKILL.md</code> — current ce-brainstorm skill</li>
+          <li><code>plugins/compound-engineering/skills/ce-doc-review/SKILL.md</code> and <code>ce-compound/SKILL.md</code> — canonical <code>mode:</code> parsing precedent</li>
+          <li><code>plugins/compound-engineering/skills/ce-work-beta/SKILL.md</code> — canonical config pre-resolution pattern</li>
+          <li><code>plugins/compound-engineering/skills/ce-setup/references/config-template.yaml</code> — config-template style</li>
+          <li><code>plugins/compound-engineering/AGENTS.md</code> — cross-skill duplication, config reading, reference inclusion</li>
+          <li><code>docs/solutions/skill-design/post-menu-routing-belongs-inline-2026-04-28.md</code></li>
+          <li><code>docs/solutions/skill-design/script-first-skill-architecture.md</code> — documented as not-applicable here</li>
+          <li><code>docs/solutions/best-practices/conditional-visual-aids-in-generated-documents-2026-03-29.md</code></li>
+          <li>Thariq Shihipar, <em>"Using Claude Code: The Unreasonable Effectiveness of HTML"</em> — motivating essay</li>
+        </ul>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="doc-footer">
+    <div class="gen-banner">
+      <span class="gen-label">Generated</span>
+      <span>HTML view of <code>docs/plans/2026-05-11-001-feat-output-html-mode-plan.md</code></span>
+      <span>·</span>
+      <span>2026-05-11T22:00:00Z</span>
+      <span>·</span>
+      <span>Markdown remains the canonical source.</span>
+    </div>
+  </footer>
+
+  <script>
+    // Tiny active-section TOC tracking. No framework, no companion file — inline only.
+    (function () {
+      const tocLinks = document.querySelectorAll('nav.toc a[href^="#"]');
+      if (!tocLinks.length) return;
+      const linkById = new Map();
+      tocLinks.forEach(a => linkById.set(a.getAttribute('href').slice(1), a));
+      const targets = Array.from(linkById.keys())
+        .map(id => document.getElementById(id))
+        .filter(Boolean);
+      const setActive = id => {
+        tocLinks.forEach(a => a.classList.remove('active'));
+        const link = linkById.get(id);
+        if (link) link.classList.add('active');
+      };
+      const observer = new IntersectionObserver(entries => {
+        const visible = entries
+          .filter(e => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible.length) setActive(visible[0].target.id);
+      }, { rootMargin: '-15% 0px -60% 0px', threshold: 0 });
+      targets.forEach(t => observer.observe(t));
+    })();
+  </script>
+
+</body>
+</html>
