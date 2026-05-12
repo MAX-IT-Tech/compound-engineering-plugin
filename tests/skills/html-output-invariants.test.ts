@@ -195,10 +195,16 @@ describe("html-output.md reference content invariants", () => {
   // identical reference content loaded. See the cloak-browser plan in the
   // cli-printing-press repo (2026-05-12) for the motivating example.
 
-  test("warns that markdown is content source, not structural authority", () => {
+  test("distinguishes content from design when treating markdown as a source", () => {
+    // The earlier framing said "markdown is the content source, not the
+    // structural authority" — which implied chat context was the authoritative
+    // source. That's not right: when the user names a markdown doc as input,
+    // the markdown IS a valid source alongside chat context. The actual rule
+    // is about WHICH ASPECT of the source the agent treats as authoritative:
+    // content/semantics yes, design/presentation no.
     expect(
-      /Markdown is the content source.*not the structural authority|re-derive structure from semantic content|not a 1:1 transformation/i.test(REFERENCE),
-      "Reference must tell the agent that markdown's structural choices (lists vs sections vs tables) are presentation defaults, NOT semantic ground truth. Without this, agents inherit markdown's bullet-list rendering for content that should be tabular.",
+      /source of content, not a source of design|not a 1:1 transformation|do NOT treat its bullet|not.*authoritative|re-choose the rendering per content shape/i.test(REFERENCE),
+      "Reference must distinguish content (authoritative — use the markdown's semantic information) from design (not authoritative — don't mirror the markdown's bullet/section/table presentation choices). Without this, agents inherit the markdown's structural defaults for content that would scan faster with different HTML affordances.",
     ).toBe(true)
   })
 

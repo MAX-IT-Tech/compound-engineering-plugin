@@ -45,11 +45,11 @@ The HTML re-renders only inside the same skill run that mutated the markdown. Ac
 
 ## Content-shape questions
 
-**Markdown is the content source, not the structural authority.** The markdown source uses lists, sections, and tables as its presentation defaults. HTML composition is not a 1:1 transformation — re-derive structure from semantic content per section. If markdown rendered 13 requirements as a bulleted list, that does NOT mean HTML must render them as a list; ask whether the semantic content (13 items sharing uniform `ID + body` shape) deserves a different rendering.
+**The markdown is a source of content, not a source of design.** When a markdown doc is part of the input (either freshly written by the same skill run, or named by the user as a source path), use it for its semantic information — what the doc is about, what sections exist, what facts each section establishes. Do NOT treat its bullet-vs-section-vs-table presentation choices as authoritative. HTML composition is not a 1:1 transformation; re-choose the rendering per content shape. If the markdown rendered 13 requirements as a bulleted list, that does NOT mean HTML must render them as a list; ask whether the semantic content (13 items sharing uniform `ID + body` shape) deserves a different rendering in HTML's richer affordance space.
 
-Read the markdown content and ask, per section:
+Read the content and ask, per section:
 
-- **Uniform-shape rule (load-bearing).** If 5+ items in a section share uniform structure (`ID + body`, `name + value`, `label + description`, `decision + rationale`, `risk + mitigation`), render as `<table>` regardless of how the markdown source structured them. Lists with chip-IDs are visually appealing but tables scan faster at that scale and make scanning across rows of the same field trivial. Tables also unlock additional columns (status, traceability, severity) that a list cannot accommodate cleanly.
+- **Uniform-shape rule (load-bearing).** If 5+ items in a section share uniform structure (`ID + body`, `name + value`, `label + description`, `decision + rationale`, `risk + mitigation`), render as `<table>` regardless of how the markdown source presented them. Lists with chip-IDs are visually appealing but tables scan faster at that scale and make scanning across rows of the same field trivial. Tables also unlock additional columns (status, traceability, severity) that a list cannot accommodate cleanly.
 - Is anything else tabular or comparative? Would a `<table>` scan faster than the list or prose currently expressing it?
 - Is anything spatial, relational, or sequential that prose flattens? Would an inline SVG diagram land faster?
 - Are there decision points or branches that a matrix or flowchart would scan faster than nested bullets?
