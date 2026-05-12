@@ -59,14 +59,14 @@ Determine `OUTPUT_FORMAT` before any other phase fires. Precedence: CLI arg > co
 **Read config (pre-resolved at skill load):**
 !`cat "$(git rev-parse --show-toplevel 2>/dev/null)/.compound-engineering/config.local.yaml" 2>/dev/null || echo '__NO_CONFIG__'`
 
-Resolution steps:
+Resolution steps. Track both the resolved `OUTPUT_FORMAT` value and an `OUTPUT_FORMAT_SOURCE` (one of `cli`, `config`, `default`, `pipeline-forced`) so later phases can distinguish explicit user choice from implicit defaults:
 
-1. **CLI arg.** Scan `$ARGUMENTS` for a token starting with the literal prefix `output:`. If found, strip it from arguments before treating the remainder as the feature description, and match its value case-insensitively against `md` and `html`.
+1. **CLI arg.** Scan `$ARGUMENTS` for a token starting with the literal prefix `output:`. If found, strip it from arguments before treating the remainder as the feature description, and match its value case-insensitively against `md` and `html`. On match, set `OUTPUT_FORMAT_SOURCE=cli`.
    - `output:` alone (no value) → no-op, fall through to step 2.
    - `output:<unknown>` (e.g., `output:pdf`) → drop the token, fall through to step 2, and remember to emit a one-line note above the post-generation menu: `Ignored unknown output: value '<value>' — defaulting to md.`
-2. **Config.** If step 1 did not resolve and the pre-resolved YAML above contains `brainstorm_output: md` or `brainstorm_output: html` (case-insensitive), use it. Missing or invalid values fall through silently.
-3. **Default.** Otherwise `OUTPUT_FORMAT=md`.
-4. **Pipeline override.** When invoked from LFG or any `disable-model-invocation` context, force `OUTPUT_FORMAT=md` regardless of steps 1-3. Downstream consumers (`ce-plan`, `ce-work`) consume markdown; emitting orphan HTML in pipeline runs is pure cost.
+2. **Config.** If step 1 did not resolve and the pre-resolved YAML above contains `brainstorm_output: md` or `brainstorm_output: html` (case-insensitive), use it and set `OUTPUT_FORMAT_SOURCE=config`. Missing or invalid values fall through silently.
+3. **Default.** Otherwise `OUTPUT_FORMAT=md` with `OUTPUT_FORMAT_SOURCE=default`.
+4. **Pipeline override.** When invoked from LFG or any `disable-model-invocation` context, force `OUTPUT_FORMAT=md` with `OUTPUT_FORMAT_SOURCE=pipeline-forced` regardless of steps 1-3. Downstream consumers (`ce-plan`, `ce-work`) consume markdown; emitting orphan HTML in pipeline runs is pure cost.
 
 **Token-parsing convention:** only literal-prefix flag tokens (`output:`, `mode:`, `delegate:` where applicable) are consumed and stripped. Other `<word>:<word>` tokens — including conventional commit prefixes like `feat:`, `fix:`, `chore:` that may appear inside a feature description — pass through verbatim.
 
@@ -80,7 +80,7 @@ If the user references an existing brainstorm topic or document, or there is an 
 - Read the document
 - Confirm with the user before resuming: "Found an existing requirements doc for [topic]. Should I continue from this, or start fresh?"
 - If resuming, summarize the current state briefly, continue from its existing decisions and outstanding questions, and update the existing document instead of creating a duplicate
-- **HTML sibling re-render on resume.** When resuming an existing requirements doc, check whether an `.html` sibling exists at the same path. If it does, re-render it in Phase 3 after the `.md` mutations settle, even if the current invocation did not pass `output:html` explicitly — the sibling's existence is the signal that the user previously chose HTML for this doc.
+- **HTML sibling re-render on resume.** When resuming an existing requirements doc, check whether an `.html` sibling exists at the same path AND `OUTPUT_FORMAT_SOURCE=default` (no explicit CLI arg or config preference resolved). If both hold, re-render the sibling in Phase 3 after the `.md` mutations settle — the sibling's existence is the signal that the user previously chose HTML for this doc. When the user explicitly passed `output:md` or set `brainstorm_output: md` in config, the explicit choice wins and the sibling is NOT re-rendered; users can disable HTML emission on resume without manually deleting the sibling.
 
 #### 0.1b Classify Task Domain
 
