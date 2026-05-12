@@ -199,14 +199,12 @@ Each guard is an explicit conditional in SKILL.md, not implicit. R2 solo does NO
 **When call-outs survive the keep test (one or more):**
 
 ```
-Based on your request and our brief Phase 0.4 bootstrap, here's the scope I'm proposing to plan against:
+Based on your request and our brief discussion, here's the scope I'm proposing to plan against:
 
 [1-3 line prose summary — what scope the plan will target, in plain language.]
 
 **Call outs:**
-- [decision-level fork the user can affirm or redirect]
-- [decision-level fork the user can affirm or redirect]
-- [decision-level fork the user can affirm or redirect]
+- [decision-level fork the user can affirm or redirect — one bullet per real fork; count varies by plan depth]
 
 Confirm to proceed, or tell me which of these to redirect. (You can also redirect to /ce-brainstorm if this is bigger than you initially thought — I'll stop here and load it for you.)
 ```
@@ -253,13 +251,12 @@ Most of these will not survive the keep test as separate call-outs. Surface only
 **When call-outs survive the keep test (one or more):**
 
 ```
-Based on the upstream brainstorm and Phase 1 research, here's the implementation scope I'm proposing for the plan:
+Based on the upstream brainstorm and the research findings, here's the implementation scope I'm proposing for the plan:
 
 [1-3 line prose summary — how the implementation approaches the work (files/modules, patterns, scope honored), in plain language.]
 
 **Call outs:**
-- [plan-time fork the user can affirm or redirect]
-- [plan-time fork the user can affirm or redirect]
+- [plan-time fork the user can affirm or redirect — one bullet per real fork; count varies by plan depth]
 
 Confirm to proceed, or tell me which of these to redirect.
 ```
