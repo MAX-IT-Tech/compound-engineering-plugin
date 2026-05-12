@@ -1,7 +1,7 @@
 ---
 name: ce-brainstorm
 description: 'Explore requirements and approaches through collaborative dialogue, then write a right-sized requirements document. Use when the user says "let''s brainstorm", "what should we build", or "help me think through X", presents a vague or ambitious feature request, or seems unsure about scope or direction -- even without explicitly asking to brainstorm.'
-argument-hint: "[feature idea or problem to explore]"
+argument-hint: "[feature idea or problem to explore] [output:html]"
 ---
 
 # Brainstorm a Feature or Improvement
@@ -52,12 +52,35 @@ Do not proceed until you have a feature description from the user.
 
 ### Phase 0: Resume, Assess, and Route
 
+#### 0.0 Resolve Output Mode
+
+Determine `OUTPUT_FORMAT` before any other phase fires. Precedence: CLI arg > config > default (`md`), with a hard pipeline-mode override.
+
+**Read config (pre-resolved at skill load):**
+!`cat "$(git rev-parse --show-toplevel 2>/dev/null)/.compound-engineering/config.local.yaml" 2>/dev/null || echo '__NO_CONFIG__'`
+
+Resolution steps:
+
+1. **CLI arg.** Scan `$ARGUMENTS` for a token starting with the literal prefix `output:`. If found, strip it from arguments before treating the remainder as the feature description, and match its value case-insensitively against `md` and `html`.
+   - `output:` alone (no value) → no-op, fall through to step 2.
+   - `output:<unknown>` (e.g., `output:pdf`) → drop the token, fall through to step 2, and remember to emit a one-line note above the post-generation menu: `Ignored unknown output: value '<value>' — defaulting to md.`
+2. **Config.** If step 1 did not resolve and the pre-resolved YAML above contains `brainstorm_output: md` or `brainstorm_output: html` (case-insensitive), use it. Missing or invalid values fall through silently.
+3. **Default.** Otherwise `OUTPUT_FORMAT=md`.
+4. **Pipeline override.** When invoked from LFG or any `disable-model-invocation` context, force `OUTPUT_FORMAT=md` regardless of steps 1-3. Downstream consumers (`ce-plan`, `ce-work`) consume markdown; emitting orphan HTML in pipeline runs is pure cost.
+
+**Token-parsing convention:** only literal-prefix flag tokens (`output:`, `mode:`, `delegate:` where applicable) are consumed and stripped. Other `<word>:<word>` tokens — including conventional commit prefixes like `feat:`, `fix:`, `chore:` that may appear inside a feature description — pass through verbatim.
+
+When `OUTPUT_FORMAT=html`, the skill emits both the markdown requirements file (as today) and a single self-contained HTML sibling at the parallel path with `.html` extension. Markdown remains canonical; HTML is a projection composed in Phase 3 right after the markdown write. Read `references/html-output.md` for composition guidance only when `OUTPUT_FORMAT=html`.
+
+The `output:` preference does NOT auto-propagate to `ce-plan` on handoff — ce-plan re-resolves its own `plan_output` config independently. Asymmetric output (`requirements.html` + `plan.md`) is acceptable; users who want HTML for both set both keys in `.compound-engineering/config.local.yaml`.
+
 #### 0.1 Resume Existing Work When Appropriate
 
 If the user references an existing brainstorm topic or document, or there is an obvious recent matching `*-requirements.md` file in `docs/brainstorms/`:
 - Read the document
 - Confirm with the user before resuming: "Found an existing requirements doc for [topic]. Should I continue from this, or start fresh?"
 - If resuming, summarize the current state briefly, continue from its existing decisions and outstanding questions, and update the existing document instead of creating a duplicate
+- **HTML sibling re-render on resume.** When resuming an existing requirements doc, check whether an `.html` sibling exists at the same path. If it does, re-render it in Phase 3 after the `.md` mutations settle, even if the current invocation did not pass `output:html` explicitly — the sibling's existence is the signal that the user previously chose HTML for this doc.
 
 #### 0.1b Classify Task Domain
 
@@ -228,6 +251,8 @@ Fires for **all tiers** including Lightweight. Skip Phase 2.5 entirely on the Ph
 Write or update a requirements document only when the conversation produced durable decisions worth preserving. Read `references/requirements-capture.md` for the document template, formatting rules, visual aid guidance, and completeness checks.
 
 For **Lightweight** brainstorms, keep the document compact. Skip document creation when the user only needs brief alignment and no durable decisions need to be preserved.
+
+**HTML emission.** If `OUTPUT_FORMAT=html` (resolved in Phase 0.0), OR if Phase 0.1 marked an existing `.html` sibling for re-render, compose the HTML rendering right after the markdown write — same path with `.html` extension. Read `references/html-output.md` for composition rules: invariants, precedence stack, content-shape questions, affordance idioms, fallback default style, agent-consumability rules, and the post-compose audit. Confirm with a second line: `HTML view written to <absolute path to .html>`. Markdown remains canonical; the HTML is a projection.
 
 ### Phase 4: Handoff
 

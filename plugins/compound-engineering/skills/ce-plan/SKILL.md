@@ -1,7 +1,7 @@
 ---
 name: ce-plan
 description: "Create structured plans for multi-step tasks -- software features, research workflows, events, study plans, or any goal that benefits from breakdown. Also deepens existing plans with interactive sub-agent review. Use when the user says 'plan this', 'create a plan', 'how should we build', 'break this down', or when a brainstorm doc is ready for planning. Use 'deepen the plan' or 'deepening pass' for the deepening flow. For exploratory requests, prefer ce-brainstorm first."
-argument-hint: "[optional: feature description, requirements doc path, plan path to deepen, or any task to plan]"
+argument-hint: "[optional: feature description, requirements doc path, plan path to deepen, or any task to plan] [output:html]"
 ---
 
 # Create Technical Plan
@@ -59,6 +59,26 @@ A plan is ready when an implementer can start confidently without needing the pl
 
 ### Phase 0: Resume, Source, and Scope
 
+#### 0.0 Resolve Output Mode
+
+Determine `OUTPUT_FORMAT` before any other phase fires. Precedence: CLI arg > config > default (`md`), with a hard pipeline-mode override.
+
+**Read config (pre-resolved at skill load):**
+!`cat "$(git rev-parse --show-toplevel 2>/dev/null)/.compound-engineering/config.local.yaml" 2>/dev/null || echo '__NO_CONFIG__'`
+
+Resolution steps:
+
+1. **CLI arg.** Scan `$ARGUMENTS` for a token starting with the literal prefix `output:`. If found, strip it from arguments before treating the remainder as the feature description, and match its value case-insensitively against `md` and `html`.
+   - `output:` alone (no value) → no-op, fall through to step 2.
+   - `output:<unknown>` (e.g., `output:pdf`) → drop the token, fall through to step 2, and remember to emit a one-line note above the post-generation menu: `Ignored unknown output: value '<value>' — defaulting to md.`
+2. **Config.** If step 1 did not resolve and the pre-resolved YAML above contains `plan_output: md` or `plan_output: html` (case-insensitive), use it. Missing or invalid values fall through silently.
+3. **Default.** Otherwise `OUTPUT_FORMAT=md`.
+4. **Pipeline override.** When invoked from LFG or any `disable-model-invocation` context, force `OUTPUT_FORMAT=md` regardless of steps 1-3. `ce-work` consumes markdown; emitting orphan HTML in pipeline runs is pure cost.
+
+**Token-parsing convention:** only literal-prefix flag tokens (`output:`, `mode:`, `delegate:` where applicable) are consumed and stripped. Other `<word>:<word>` tokens — including conventional commit prefixes like `feat:`, `fix:`, `chore:` that may appear inside a feature description — pass through verbatim.
+
+When `OUTPUT_FORMAT=html`, the skill emits both the markdown plan file (as today) and a single self-contained HTML sibling at the parallel path with `.html` extension. Markdown remains canonical; HTML is a projection composed AFTER `ce-doc-review`'s `safe_auto` fixes have applied (see Phase 5.3.9). Read `references/html-output.md` for composition guidance only when `OUTPUT_FORMAT=html`.
+
 #### 0.1 Resume Existing Plan Work When Appropriate
 
 If the user references an existing plan file or there is an obvious recent matching plan in `docs/plans/`:
@@ -77,6 +97,8 @@ Once the plan is identified and appears complete (all major sections present, im
 Normal editing requests (e.g., "update the test scenarios", "add a new implementation unit", "strengthen the risk section") should NOT trigger the fast path — they follow the standard resume flow.
 
 If the plan already has a `deepened: YYYY-MM-DD` frontmatter field and there is no explicit user request to re-deepen, the fast path still applies the same confidence-gap evaluation — it does not force deepening.
+
+**HTML sibling re-render on resume.** When resuming or deepening a plan, check whether an `.html` sibling exists at the same path. If it does, mark it for re-render after the current run's `.md` mutations settle (see Phase 5.3.9). This keeps the HTML view aligned with the markdown even when the current invocation did not pass `output:html` explicitly — the sibling's existence is the signal that the user previously chose HTML for this plan.
 
 #### 0.1b Classify Task Domain
 
@@ -550,11 +572,15 @@ Use the Write tool to save the complete plan to:
 docs/plans/YYYY-MM-DD-NNN-<type>-<descriptive-name>-plan.md
 ```
 
+Sequence number `NNN` is derived from `.md` files only — do not count any `.html` siblings when computing today's next number.
+
 Confirm (use absolute path so the reference is clickable in modern terminals):
 
 ```text
 Plan written to <absolute path to plan>
 ```
+
+**HTML emission deferred.** When `OUTPUT_FORMAT=html` (resolved in Phase 0.0), do not compose the HTML sibling here. HTML composes in Phase 5.3.9 after `ce-doc-review`'s `safe_auto` fixes have been applied to the markdown — so the first HTML emission already reflects autofixes.
 
 **Pipeline mode:** If invoked from an automated workflow such as LFG or any `disable-model-invocation` context, skip interactive questions. Make the needed choices automatically and proceed to writing the plan.
 
@@ -612,11 +638,11 @@ After document review and final checks, print a one-line summary of the headless
 
 **Question:** "Plan ready at `<absolute path to plan>`. What would you like to do next?" (use absolute path so the reference is clickable in modern terminals)
 
-**Options (5 when actionable findings remain; option 2 dropped and remaining options renumbered otherwise — including FYI-only state):**
+**Options (5 when actionable findings remain; option 2 dropped and remaining options renumbered otherwise — including FYI-only state). When `OUTPUT_FORMAT=html`, option 4 replaces "Open in Proof" with "Open in browser" (mutual exclusion — Proof and local browser serve overlapping review purposes, and the swap keeps the menu within its option cap):**
 1. **Start `/ce-work`** (recommended) - Begin implementing this plan in the current session
 2. **Run deeper doc review** - Walk through the remaining findings interactively (full ce-doc-review walkthrough)
 3. **Create Issue** - Create a tracked issue from this plan in your configured issue tracker (GitHub or Linear)
-4. **Open in Proof (web app) — review and comment to iterate with the agent** - Open the doc in Every's Proof editor, iterate with the agent via comments, or copy a link to share with others
+4. **Open in Proof (web app) — review and comment to iterate with the agent** — *or, when `OUTPUT_FORMAT=html`,* **Open in browser** - Open the `.html` sibling locally for review and sharing
 5. **Done for now** - Pause; the plan file is saved and can be resumed later
 
 **Routing.** Act on the user's selection — do not just announce it. Elaborate sub-flows (Proof HITL state machine, Issue Creation tracker detection, post-HITL resync) live in `references/plan-handoff.md`.
@@ -625,6 +651,7 @@ After document review and final checks, print a one-line summary of the headless
 - **Run deeper doc review** — Re-invoke the `ce-doc-review` skill on the plan path **without** `mode:headless` so the interactive routing question and walkthrough fire. After it returns, re-render this menu with refreshed counts so the user can pick a next-stage action.
 - **Create Issue** — Detect the project tracker (`gh` for GitHub, `linear` for Linear) and create the issue from the plan file as described under "Issue Creation" in `references/plan-handoff.md`. After creation, display the issue URL and ask whether to proceed to `/ce-work` via the platform's blocking question tool.
 - **Open in Proof (web app) — review and comment to iterate with the agent** — Load the `ce-proof` skill in HITL-review mode with the plan file as `source file`, the plan title as `doc title`, identity `ai:compound-engineering` / `Compound Engineering`, and recommended next step `/ce-work`. Then follow the post-HITL resync logic in `references/plan-handoff.md`, which handles the four `ce-proof` return statuses, re-runs `ce-doc-review` after material edits, and falls back gracefully on upload failure.
+- **Open in browser** — When `OUTPUT_FORMAT=html`, display the absolute path to the `.html` sibling so the user can open it locally. Where the platform exposes a browser-opening primitive (e.g., `open` on macOS, `xdg-open` on Linux, `start` on Windows), the agent may use it; otherwise print the absolute path and let the user open it. Do not invoke `ce-work` from this option — `ce-work` still consumes the markdown plan, and the user picked HTML for review/sharing, not handoff.
 - **Done for now** — Display a brief confirmation that the plan file is saved and end the turn. Do not start follow-up work without an explicit further user prompt.
 
 If the user types free-form prompts targeting the findings (e.g., "review", "walk through", "deep review"), route as if they picked `Run deeper doc review` — fire the skill rather than looping back to the menu. For other free-text revisions, accept the input and loop back to this menu after applying the revision.

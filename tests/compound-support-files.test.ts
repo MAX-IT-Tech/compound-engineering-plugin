@@ -30,6 +30,29 @@ describe("ce-compound support file drift", () => {
   }
 })
 
+// html-output.md is duplicated across ce-plan and ce-brainstorm. There is no
+// cross-skill shared-file mechanism (see plugins/compound-engineering/AGENTS.md
+// "Runtime vs Authoring Context"); both copies must stay byte-for-byte identical
+// so the agent renders HTML the same way regardless of which skill composed it.
+const HTML_OUTPUT_SKILLS = ["ce-plan", "ce-brainstorm"]
+
+describe("html-output.md drift across ce-plan and ce-brainstorm", () => {
+  test(`references/html-output.md is identical across ${HTML_OUTPUT_SKILLS.join(", ")}`, async () => {
+    const contents = await Promise.all(
+      HTML_OUTPUT_SKILLS.map((skill) =>
+        readFile(
+          path.join(PLUGIN_ROOT, skill, "references/html-output.md"),
+          "utf8",
+        ),
+      ),
+    )
+
+    for (let i = 1; i < contents.length; i++) {
+      expect(contents[i]).toBe(contents[0])
+    }
+  })
+})
+
 /**
  * Regression tests for the YAML-safety quoting rule for array items.
  *

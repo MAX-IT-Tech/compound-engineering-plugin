@@ -47,7 +47,7 @@ Present only the options that apply. Renumber so visible options stay contiguous
 
 1. **Plan implementation with `ce-plan` (Recommended)** - Move to `ce-plan` for structured implementation planning. Shown only when `Resolve Before Planning` is empty.
 2. **Agent review of requirements doc with `ce-doc-review`** - Dispatch reviewer agents to check the doc for coherence, feasibility, scope, and other persona-specific issues; auto-apply safe fixes; route remaining findings interactively. Shown only when a requirements document exists.
-3. **Open in Proof — review and comment to iterate with the agent** - Open the doc in Every's Proof editor, iterate with the agent via comments, or copy a link to share with others. Shown only when a requirements document exists.
+3. **Open in Proof — review and comment to iterate with the agent** - Open the doc in Every's Proof editor, iterate with the agent via comments, or copy a link to share with others. Shown only when a requirements document exists. *When `OUTPUT_FORMAT=html`, this option is replaced by* **Open in browser** — open the `.html` sibling locally for review and sharing (mutual exclusion keeps the menu within its 6-option cap; Proof and local-browser review serve overlapping purposes).
 4. **Build it now with `ce-work` (skip planning)** - Skip planning and move to `ce-work`; suited to lightweight, well-defined changes. Shown only when `Resolve Before Planning` is empty **and** scope is lightweight, success criteria are clear, scope boundaries are clear, and no meaningful technical or research questions remain (the "direct-to-work gate").
 5. **More clarifying questions to sharpen the doc** - Keep refining scope, edge cases, constraints, and preferences through further dialogue. Always shown.
 6. **Done for now** - Pause; the requirements doc is saved and can be resumed later. Always shown.
@@ -64,7 +64,7 @@ Immediately load the `ce-plan` skill in the current session. Pass the requiremen
 
 **If user selects "Agent review of requirements doc with `ce-doc-review`":**
 
-Load the `ce-doc-review` skill, passing the requirements document path as the argument. When ce-doc-review returns "Review complete", return to the Phase 4 options and re-render the menu (the doc may have changed, so re-evaluate `Resolve Before Planning`, direct-to-work gate, and residual findings). If residual P0/P1 findings remain unaddressed, include the post-review nudge above the menu. Do not show the closing summary yet.
+Load the `ce-doc-review` skill, passing the requirements document path as the argument. When ce-doc-review returns "Review complete", return to the Phase 4 options and re-render the menu (the doc may have changed, so re-evaluate `Resolve Before Planning`, direct-to-work gate, and residual findings). If `OUTPUT_FORMAT=html` for this run (or an `.html` sibling exists from a prior run), also re-compose the HTML per Phase 3's HTML emission rule before re-rendering the menu, since `safe_auto` fixes may have mutated the markdown. If residual P0/P1 findings remain unaddressed, include the post-review nudge above the menu. Do not show the closing summary yet.
 
 **If user selects "Build it now with `ce-work` (skip planning)":**
 
@@ -85,12 +85,14 @@ Follow `references/hitl-review.md` in the ce-proof skill. It uploads the doc, pr
 
 When the ce-proof skill returns control:
 
-- `status: proceeded` with `localSynced: true` → the requirements doc on disk now reflects the review. Return to the Phase 4 options and re-render the menu (the doc may have changed substantially during review, so option eligibility can shift — re-evaluate `Resolve Before Planning`, direct-to-work gate, and residual ce-doc-review findings against the updated doc).
+- `status: proceeded` with `localSynced: true` → the requirements doc on disk now reflects the review. If `OUTPUT_FORMAT=html` for this run (or an `.html` sibling exists), re-compose the HTML before re-rendering the menu, since HITL may have materially rewritten the markdown. Return to the Phase 4 options and re-render the menu (the doc may have changed substantially during review, so option eligibility can shift — re-evaluate `Resolve Before Planning`, direct-to-work gate, and residual ce-doc-review findings against the updated doc).
 - `status: proceeded` with `localSynced: false` → the reviewed version lives in Proof at `docUrl` but the local copy is stale. Offer to pull the Proof doc to `localPath` using the ce-proof skill's Pull workflow. Re-render the Phase 4 menu after the pull completes (or is declined). If the pull was declined, include a one-line note above the menu that `<localPath>` is stale vs. Proof — otherwise `Plan implementation` / `Build it now` / `Agent review of requirements doc` will silently read the pre-review copy (ce-doc-review would analyze stale content, and planning or work would skip the user's Proof edits).
 - `status: done_for_now` → the doc on disk may be stale if the user edited in Proof before leaving. Offer to pull the Proof doc to `localPath` so the local requirements file stays in sync, then return to the Phase 4 options. If the pull was declined, include the stale-local note above the menu. `done_for_now` means the user stopped the HITL loop without syncing — it does not mean they ended the whole brainstorm; they may still want to plan implementation, run an agent review, or keep refining the doc.
 - `status: aborted` → fall back to the Phase 4 options without changes.
 
 If the initial upload fails (network error, Proof API down), retry once after a short wait. If it still fails, tell the user the upload didn't succeed and briefly explain why, then return to the Phase 4 options — don't leave them wondering why the option did nothing.
+
+**If user selects "Open in browser":** (HTML-mode replacement for "Open in Proof", shown when `OUTPUT_FORMAT=html`.) Display the absolute path to the `.html` sibling so the user can open it locally. Where the platform exposes a browser-opening primitive (e.g., `open` on macOS, `xdg-open` on Linux, `start` on Windows), the agent may invoke it directly; otherwise print the absolute path and let the user open it. Do not invoke `ce-plan` or `ce-work` from this option — the user picked HTML for review/sharing, not handoff. After the path is displayed (or the browser is opened), return to the Phase 4 options so the user can pick a follow-up action.
 
 **If user selects "Done for now":** Display the closing summary (see 4.3) and end the turn.
 
