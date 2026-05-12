@@ -15,7 +15,7 @@ Honor user style preferences in this order (highest to lowest):
 
 Before writing the CSS, scan the loaded context for any *stylesheet reference* the user has indicated for documents like this — file path, URL, named library, or style brand. If found and inlinable (short local file, fetchable URL within budget), inline it into `<style>`. If found but not inlinable (large framework, paywalled stylesheet, named system without a fetchable source), compose CSS in its spirit — typography, color, density cues drawn from the named system. Only fall back to the default style when no preference signal exists anywhere.
 
-The single-file invariant is preserved either way. Never emit a `<link rel="stylesheet">` to an external sheet.
+The single-file invariant is preserved either way. The CSS that styles the doc must live inline in `<style>`. External `<link rel="stylesheet">` is permitted only for CDN webfont CSS (the documented webfont exception below) and only when paired with a complete offline-readable fallback font stack so the doc still reads when the CDN is unreachable. Never link to an external stylesheet that carries layout, color, or typography rules the doc cannot read offline.
 
 ## Hard invariants
 

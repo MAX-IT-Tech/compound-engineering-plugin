@@ -148,6 +148,28 @@ describe("ce-plan output:html mode", () => {
     ).toBe(true)
   })
 
+  test("menu gate predicate for Open in browser matches HTML composition gate", () => {
+    // The composition gate (Phase 5.3.9) fires when OUTPUT_FORMAT=html OR
+    // Phase 0.1 marked an existing .html sibling for re-render. The menu gate
+    // for "Open in browser" must match exactly — otherwise a resume run that
+    // regenerated the HTML would still surface Proof and hide the fresh HTML
+    // output the user just implicitly requested via sibling re-render.
+    const phaseStart = SKILL_BODY.indexOf("##### 5.3.8")
+    const phaseRegion = SKILL_BODY.slice(phaseStart)
+
+    // The Open-in-browser rendering condition must mention BOTH parts of the
+    // composition predicate: explicit HTML wanted AND sibling re-render.
+    // Acceptable framings: "HTML emitted this run", "HTML artifact was produced",
+    // or naming both sides of the OR.
+    const browserGateRegion = phaseRegion.match(/Open in browser[\s\S]{0,600}/)
+    expect(browserGateRegion).not.toBeNull()
+    const text = browserGateRegion![0]
+    expect(
+      /sibling.*re-render|HTML.*emitted|HTML artifact.*produced|Phase 0\.1.*marked/i.test(text),
+      "The 'Open in browser' menu gate must use the same predicate as the Phase 5.3.9 composition gate (HTML wanted OR sibling-marked re-render), not just OUTPUT_FORMAT=html. A resume run that regenerates HTML must surface 'Open in browser', not 'Open in Proof'.",
+    ).toBe(true)
+  })
+
   test("html-output.md reference exists and is loadable", () => {
     // The reference holds the HTML composition rules: invariants, precedence
     // stack, content-shape questions, affordance idioms, fallback CSS,

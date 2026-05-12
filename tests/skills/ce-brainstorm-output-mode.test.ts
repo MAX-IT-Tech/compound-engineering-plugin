@@ -104,6 +104,21 @@ describe("ce-brainstorm output:html mode", () => {
     ).toBe(true)
   })
 
+  test("handoff.md menu gate predicate matches Phase 3 HTML composition gate", () => {
+    // Same fix as ce-plan: the menu gate must match the composition gate.
+    // A resume run with a .html sibling but OUTPUT_FORMAT=md (default-source)
+    // regenerates the HTML in Phase 3 but a OUTPUT_FORMAT-only menu gate would
+    // hide "Open in browser" — leaving the user with fresh HTML and no menu
+    // option to open it.
+    const browserGateRegion = HANDOFF_BODY.match(/Open in browser[\s\S]{0,600}/)
+    expect(browserGateRegion).not.toBeNull()
+    const text = browserGateRegion![0]
+    expect(
+      /sibling.*re-render|HTML.*emitted|HTML artifact.*produced|Phase 0\.1.*marked/i.test(text),
+      "handoff.md 'Open in browser' menu gate must use Phase 3's HTML emission predicate (OUTPUT_FORMAT=html OR sibling-marked re-render), not just OUTPUT_FORMAT=html.",
+    ).toBe(true)
+  })
+
   test("html-output.md reference exists at parallel path", () => {
     const body = readFileSync(HTML_OUTPUT_PATH, "utf8")
     expect(body.length).toBeGreaterThan(0)

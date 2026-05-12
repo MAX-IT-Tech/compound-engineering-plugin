@@ -243,4 +243,23 @@ describe("html-output.md reference content invariants", () => {
       "Reference must clarify that a small inline <script> for active-section tracking / anchor-permalink behavior is acceptable. The no-JS-framework rule applies to React/Vue/etc., not to ~15 lines of vanilla observer code.",
     ).toBe(true)
   })
+
+  test("webfont CDN <link rel=\"stylesheet\"> is permitted with fallback (no internal contradiction)", () => {
+    // An earlier draft had "Never emit a <link rel='stylesheet'> to an
+    // external sheet" inside the active-recall block, while the Fallback
+    // default style section showed a <link rel="stylesheet"> to Google Fonts
+    // CSS. Both could not be right. The webfont exception is the documented
+    // intent; the absolute "never emit" was the bug. The reference must not
+    // contain an absolute prohibition that contradicts its own webfont
+    // example.
+    expect(
+      /Never emit a `<link rel="stylesheet">` to an external sheet\.\s*$/m.test(REFERENCE),
+      "Reference must NOT contain an absolute 'Never emit a <link rel=\"stylesheet\"> to an external sheet' clause — that contradicts the documented webfont exception. Qualify the rule to scope it to layout/typography stylesheets, not webfont CSS.",
+    ).toBe(false)
+    // And the webfont exception must remain explicit.
+    expect(
+      /webfont.*<link.*permitted|<link rel="stylesheet">.*permitted.*webfont|permitted only for CDN webfont/i.test(REFERENCE),
+      "Reference must explicitly permit <link rel=\"stylesheet\"> for CDN webfont CSS with the offline-fallback condition stated nearby.",
+    ).toBe(true)
+  })
 })
