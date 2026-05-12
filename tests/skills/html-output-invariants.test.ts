@@ -53,20 +53,29 @@ describe("html-output.md reference content invariants", () => {
     ).toBe(true)
   })
 
-  test("specifies < → &lt; escape rule for </script> injection prevention", () => {
-    // The reference text must literally show the HTML entity `&lt;` (not just
-    // mention the word "escape"). An earlier draft of this test allowed either
-    // and missed a no-op where the prose said "escape `<` as `<`" — both
-    // characters being the literal `<`. Require the entity itself.
+  test("specifies < → \\u003c JSON-Unicode escape (not the HTML entity) for </script> injection prevention", () => {
+    // <script type="application/json"> is HTML raw-text content where HTML
+    // entities are NOT decoded. Escaping `<` as `&lt;` would prevent the
+    // </script> termination but corrupt round-tripping — .textContent returns
+    // the literal four characters '&lt;', not '<'. The correct escape is the
+    // JSON Unicode escape <, which JSON parsers natively decode back to
+    // '<'. Two prior rounds of this PR shipped the wrong escape (&lt;); this
+    // test now pins the correct one and forbids the wrong-escape regression.
     expect(
-      /&lt;/.test(REFERENCE),
-      "Reference must specify the HTML entity `&lt;` as the escape target. Writing 'escape `<` as `<`' is a no-op and was the bug this test now guards against.",
+      /\\u003c/.test(REFERENCE),
+      "Reference must specify `\\u003c` (JSON Unicode escape) as the escape target. The earlier HTML-entity `&lt;` recommendation was wrong because <script> raw-text content does not decode HTML entities.",
     ).toBe(true)
-    // Also require the escape rule to appear in a sentence about <script>
-    // injection, so a stray &lt; somewhere unrelated wouldn't satisfy the test.
+    // The escape rule must sit near a <script> / </script> mention so the
+    // contract is unambiguous.
     expect(
-      /&lt;[\s\S]{0,200}script|script[\s\S]{0,200}&lt;/i.test(REFERENCE),
-      "The `&lt;` escape mention must sit near a reference to `<script>` / `</script>` injection so the contract is unambiguous.",
+      /\\u003c[\s\S]{0,400}script|script[\s\S]{0,400}\\u003c/i.test(REFERENCE),
+      "The `\\u003c` escape mention must sit near a reference to `<script>` / `</script>` so the contract is unambiguous.",
+    ).toBe(true)
+    // Must explicitly warn against using &lt; as the escape — defends against
+    // regression to the prior buggy recommendation.
+    expect(
+      /(Do NOT use the HTML entity `&lt;`|not.*the HTML entity `&lt;`|`&lt;`.*would.*corrupt|`&lt;`.*not be decoded)/i.test(REFERENCE),
+      "Reference must explicitly warn against using the HTML entity `&lt;` as the escape target, naming the round-trip failure mode so a future maintainer can't unintentionally regress.",
     ).toBe(true)
   })
 
