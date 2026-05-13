@@ -389,4 +389,111 @@ describe("html-output.md reference content invariants", () => {
       "Reference must explicitly permit <link rel=\"stylesheet\"> for CDN webfont CSS with the offline-fallback condition stated nearby.",
     ).toBe(true)
   })
+
+  // Wireframe-mockup affordance: HTML-only, requirements-doc-only, with
+  // explicit guardrails. The affordance was added to communicate visual
+  // direction of user-facing surfaces during brainstorming WITHOUT slipping
+  // into mockup-as-spec territory. The guardrails (fidelity ceiling, static
+  // only, anti-padding, mandatory caption) are what keep it a directional
+  // aid rather than a prescriptive deliverable.
+  describe("wireframe mockup affordance", () => {
+    const wireframeStart = REFERENCE.indexOf("## Wireframe mockups")
+    const wireframeRegion =
+      wireframeStart >= 0 ? REFERENCE.slice(wireframeStart, wireframeStart + 3500) : ""
+
+    test("section exists with explicit HTML-only / requirements-only scope in heading", () => {
+      expect(wireframeStart).toBeGreaterThan(-1)
+      // The scope qualifier MUST appear in the heading itself so an agent
+      // skimming section titles doesn't apply this affordance to plans.
+      expect(
+        /## Wireframe mockups \(HTML-only, requirements docs only\)/.test(REFERENCE),
+        "Wireframe section heading must carry the '(HTML-only, requirements docs only)' qualifier so the scope is obvious at the heading level.",
+      ).toBe(true)
+    })
+
+    test("scope gate names both required conditions (requirements doc + visual surface)", () => {
+      expect(
+        /requirements document.*ce-brainstorm|ce-brainstorm output/i.test(wireframeRegion),
+        "Wireframe affordance must gate on the doc being a requirements document (ce-brainstorm output), identifiable from frontmatter shape.",
+      ).toBe(true)
+      expect(
+        /user-facing visual surface|user-facing.*surface|UI feature|screen layout|screen flow/i.test(wireframeRegion),
+        "Wireframe affordance must gate on the content describing a user-facing visual surface, not abstract systems (API/agent workflow/infrastructure).",
+      ).toBe(true)
+    })
+
+    test("explicitly excludes plans (ce-plan output)", () => {
+      // Plans describe HOW. A mockup in a plan over-prescribes implementation.
+      // This exclusion must be explicit because the architecture-trigger
+      // diagram rule lives nearby and could be misread as covering wireframes.
+      expect(
+        /implementation plans \(ce-plan output\): do NOT render wireframes|do not render wireframes.*plan|plans describe HOW/i.test(wireframeRegion),
+        "Wireframe section must explicitly state that ce-plan output does NOT get wireframes (plans describe HOW; a mockup in a plan over-prescribes).",
+      ).toBe(true)
+    })
+
+    test("declares HTML-only (markdown stays prose + visual-communication.md affordances)", () => {
+      expect(
+        /HTML-only|HTML projection|markdown stays prose/i.test(wireframeRegion),
+        "Wireframe affordance must declare HTML-only so the canonical markdown isn't pushed to include wireframes too.",
+      ).toBe(true)
+    })
+
+    test("fidelity ceiling forces wireframe (not mockup) rendering", () => {
+      expect(
+        /Fidelity ceiling.*wireframe, not mockup|wireframe, not mockup/i.test(wireframeRegion),
+        "Wireframe section must state the 'wireframe, not mockup' fidelity ceiling so agents don't pixel-perfect-ify the rendering.",
+      ).toBe(true)
+      // The concrete tells (gray boxes, labels, placeholder copy) must be
+      // named so the agent can recognize the fidelity bar in practice.
+      expect(
+        /[Gg]ray boxes|placeholder copy|\[Product name\]|\[CTA label\]|\[user avatar\]/i.test(wireframeRegion),
+        "Fidelity ceiling must name concrete tells (gray boxes, placeholder copy like '[Product name]' / '[CTA label]') so the agent can recognize the fidelity bar.",
+      ).toBe(true)
+      // Must forbid pixel-perfect color/typography/component-library choices.
+      expect(
+        /No pixel-perfect|no exact typography|no specific component-library|no specific component libraries/i.test(wireframeRegion),
+        "Fidelity ceiling must forbid pixel-perfect colors, exact typography, and specific component-library references — those are spec-level choices that should stay open.",
+      ).toBe(true)
+    })
+
+    test("static-only rule forbids JS interaction / state / live data", () => {
+      // Without this, the affordance slides into "let's build a prototype."
+      expect(
+        /Static only|static only|No JavaScript interaction/i.test(wireframeRegion),
+        "Wireframe section must include a static-only rule so agents don't build interactive prototypes.",
+      ).toBe(true)
+      expect(
+        /no working form|no state changes|no live data/i.test(wireframeRegion),
+        "Static-only rule must explicitly forbid working forms, state changes, and live data binding so the boundary is clear.",
+      ).toBe(true)
+    })
+
+    test("anti-padding rule (one wireframe per distinct visual concept)", () => {
+      expect(
+        /[Aa]nti-padding/.test(wireframeRegion),
+        "Wireframe section must include an anti-padding rule (mirroring the diagrams anti-padding rule).",
+      ).toBe(true)
+      expect(
+        /one wireframe per distinct visual concept|each wireframe.*add.*not in the others|two candidate wireframes.*same layout/i.test(wireframeRegion),
+        "Anti-padding rule must state 'one wireframe per distinct visual concept' so agents don't render multiple views of the same layout.",
+      ).toBe(true)
+    })
+
+    test("mandatory directional caption with required wording", () => {
+      // This is the most important guardrail. Without the caption, a reader
+      // sees a wireframe and reads it as a spec. The caption is what keeps
+      // the affordance honest.
+      expect(
+        /Mandatory directional caption|directional.*not the spec|Directional only/i.test(wireframeRegion),
+        "Wireframe section must require a directional caption explicitly stating the wireframe is NOT a spec.",
+      ).toBe(true)
+      // The required wording (or close paraphrase) must be quoted so the
+      // agent has concrete language to reach for.
+      expect(
+        /[Dd]irectional only.*illustrates the intended user-facing|placeholders for review, not requirements|illustrates the intended user-facing.*shape/i.test(wireframeRegion),
+        "Wireframe section must quote the required caption wording so the agent has concrete language and doesn't drift to something weaker.",
+      ).toBe(true)
+    })
+  })
 })

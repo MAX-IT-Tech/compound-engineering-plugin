@@ -104,6 +104,31 @@ Each shape communicates a different aspect. Forcing multiple shapes into one dia
 
 **Spatial logic matches semantic scope.** Place overrides, exceptions, and side-effects spatially separated from the main flow with a labeled connector or a "FIRST CHECK" banner. An override that applies to the whole flow belongs above or beside it, not tucked next to one terminal box where it could be mistaken for a fourth branch.
 
+## Wireframe mockups (HTML-only, requirements docs only)
+
+When a requirements document describes a user-facing visual surface (UI feature, screen layout, screen flow, component placement, or mode comparison with visual differences), include a wireframe mockup in the HTML rendering. Seeing a directional shape of the proposed surface communicates intent faster than prose and helps the reader catch layout-level concerns earlier than a downstream design pass would.
+
+This affordance applies ONLY when both conditions hold:
+
+- The HTML being rendered is a **requirements document** (ce-brainstorm output). Identifiable from frontmatter shape — `topic` / `date` / requirements-style fields, no `type: feat|fix|refactor` plan field.
+- The content describes a **user-facing visual surface**, not an abstract system (API design, agent workflows, infrastructure, schemas → no wireframe).
+
+For **implementation plans (ce-plan output): do NOT render wireframes.** Plans describe HOW, not WHAT; a mockup in a plan over-prescribes implementation choices that should remain open during build. The architecture-trigger diagrams in the Diagrams section above are the right visual affordance for plans.
+
+This affordance is **HTML-only**. The canonical markdown stays prose + the visual-aid set defined in `references/visual-communication.md`. Wireframes are part of the HTML projection's richer affordance space, not part of the markdown source.
+
+**Fidelity ceiling: wireframe, not mockup.** Gray boxes for layout regions, text labels for content placeholders, intentional placeholder copy (`[Product name]`, `[CTA label]`, `[user avatar]`). No pixel-perfect colors, no exact typography choices, no specific component-library references. The wireframe communicates *spatial arrangement and structure*, not visual style. Overshooting fidelity makes the wireframe look like a spec and locks in choices that should stay open through implementation review.
+
+**Static only.** Inline SVG or simple HTML/CSS for layout. No JavaScript interaction, no working form fields, no state changes, no live data binding. The wireframe is a still illustration, not a prototype.
+
+**Anti-padding.** One wireframe per distinct visual concept. If two candidate wireframes are really two views of the same layout, pick the one that scans better. If a section describes three modes with materially different layouts, one wireframe per mode is correct; if the modes differ only by copy or color, one wireframe with annotated variation is correct.
+
+**Mandatory directional caption.** Every wireframe carries an explicit "directional, not the spec" note adjacent to it (caption, figcaption, or italic line directly below). Required wording (or close paraphrase):
+
+> *Directional only — illustrates the intended user-facing shape. Exact colors, spacing, copy, and component choices are placeholders for review, not requirements.*
+
+Without this caption the wireframe risks being read as a binding visual spec, which the affordance is explicitly designed to avoid.
+
 ## Fallback default style
 
 Inline approximately this CSS (or its equivalent under any active stylesheet preference) into `<style>`. Extend the baseline with content-specific styling (pills, cards, diagrams, tables) as needed.
