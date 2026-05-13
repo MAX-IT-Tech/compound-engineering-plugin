@@ -67,10 +67,42 @@ Reach for these idioms when content warrants. None are required, except where th
 
 - **Sticky TOC sidebar with active-section indicator** when the doc has 5+ top-level sections OR exceeds ~400 lines. Two-column layout on desktop (`grid-template-columns: minmax(200px, 240px) minmax(0, 1fr)`), sticky `<nav>` on the left with section anchors, collapses to top of page on mobile (`@media (max-width: 900px) { .layout { display: block; } nav.toc { position: static; } }`). Pair with a small inline `IntersectionObserver` script that toggles an `.active` class on the matching nav anchor as the user scrolls — single-file invariant preserved because the script is inline. A bare `<script>` for active-section tracking and anchor-permalink behavior is acceptable; the no-JS-framework rule applies to React/Vue/etc., not to ~15 lines of vanilla observer code.
 - **`<table>` for uniform-shape content (5+ items sharing the same field structure).** Required per the content-shape questions, not optional. Add a "covered by" or "references" column for reverse traceability when ID-anchored rows have downstream references.
-- **`<details>` + `<summary>`** for collapsible subsections inside repeating rich-content cards. Keep the card's headline metadata (Goal, primary IDs, file lists) always visible above the collapsibles; wrap each secondary subsection (Approach, Test scenarios, Verification) in its own `<details>` so readers expand only what they need. Native HTML, no JS required, single-file invariant preserved.
-- **Inline SVG flowcharts / sequences / data-flow** for branching or temporal logic that prose flattens. Place overrides, exceptions, and side-effects spatially separated from the main flow with a labeled connector or a "FIRST CHECK" banner — spatial position must match logical scope.
+- **`<details>` + `<summary>`** for collapsible subsections inside repeating rich-content cards. Keep the card's headline metadata (Goal, primary IDs, file lists) always visible above the collapsibles; wrap each secondary subsection (Approach, Test scenarios, Verification, Patterns to follow) in its own `<details>` so readers expand only what they need. **All collapsibles start closed** — no `open` attribute on any `<details>` inside repeating cards. The metadata strip above is the primary surface; subsection labels are clickable affordances for readers to expand on demand. Defaulting any subsection open (even Approach) negates the scan-friendly compactness the pattern is meant to provide and silently extends the doc's at-rest height. Native HTML, no JS required, single-file invariant preserved.
+- **Inline SVG diagrams** for relational, temporal, or branching content that prose flattens. See "Diagrams: when and how many" below for triggers and the per-shape rule.
 - **Two-column lists** for compact heterogeneous bibliographies (Sources & References) when items are short.
 - **Tinted callout cards or accent-bordered subsections** for content that is "different in kind" (Deferred to Follow-Up, Open Questions, advisory notes) — variety budget that breaks visual sameness without inventing a new layout system.
+
+## Color usage rules
+
+- **Reserve `--accent` text color for status chips, ID chips (`.req-id`, `.unit-id`), links, and section borders.** Do NOT color `<strong>` in body content by default. Bold weight already carries emphasis; applying accent color to every `<strong>` in a long list (e.g., a Key Technical Decisions section with 10+ items) overwhelms the eye in dark mode especially. The CSS should leave `strong` at `color: inherit` unless a specific surface (status pill, ID chip) is being styled.
+- **Don't redefine the accent palette without reason.** The fallback palette is tuned for both modes (muted teal in dark mode at `#2dd4bf`, deeper teal in light mode at `#0d7d6b`). Replacing it with a higher-saturation accent (e.g., Tailwind cyan-300 `#5eead4`, sky-300 `#7dd3fc`, amber-300 `#fcd34d`) reintroduces the body-bold readability problem. If DESIGN.md or a stylesheet reference dictates a different hue, follow it — but keep the saturation around the same level as the fallback.
+
+## Diagrams: when and how many
+
+**Architecture trigger.** Render an inline SVG diagram when the doc describes any of these shapes:
+
+- 3+ components with directed relationships (calls, flows, ownership)
+- An inter-process protocol with 3+ named steps
+- A state machine with 3+ states
+- A lifecycle (initialization → use → teardown)
+- Branching logic with 3+ decision points
+- Data transformation across 3+ stages
+
+Prose alone is rarely the right rendering for these shapes. The trigger is content-driven, not length-driven.
+
+**Trigger fires per diagrammatic shape, not per diagram.** Diagrams come in distinct shapes:
+
+- **Component topology** — who calls whom (boxes + directed arrows)
+- **Sequence** — ordered messages between actors over time (lifelines)
+- **State machine** — states and transitions (nodes + labeled edges)
+- **Flowchart** — branching decisions (decision diamonds + paths)
+- **Data-flow** — transformations from input to output (pipeline stages)
+
+Each shape communicates a different aspect. Forcing multiple shapes into one diagram clutters; rendering one diagram per shape keeps each clear. A plan with both architectural topology AND a protocol sequence gets two diagrams, not one combined diagram. A plan with topology + protocol + state lifecycle gets three. The agent's job is to recognize which shapes are present in the content, not to hit a count target.
+
+**Anti-pattern: padding for thoroughness.** Don't render redundant diagrams to look comprehensive. If two candidate diagrams are really just two views of the same information, pick the one that scans best for the reader. The test: does each diagram add information not present in the others? If no, drop the redundant one. If yes, keep both.
+
+**Spatial logic matches semantic scope.** Place overrides, exceptions, and side-effects spatially separated from the main flow with a labeled connector or a "FIRST CHECK" banner. An override that applies to the whole flow belongs above or beside it, not tucked next to one terminal box where it could be mistaken for a fourth branch.
 
 ## Fallback default style
 
@@ -99,9 +131,9 @@ Inline approximately this CSS (or its equivalent under any active stylesheet pre
     --text: #f5f5f5;
     --text-muted: #a3a3a3;
     --border: #2a2a2d;
-    --accent: #5eead4;
+    --accent: #2dd4bf;
     --accent-soft: #0e3a32;
-    --accent-text: #99f6e4;
+    --accent-text: #5eead4;
     --code-bg: #1f1f23;
   }
 }

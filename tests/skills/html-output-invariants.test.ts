@@ -259,6 +259,79 @@ describe("html-output.md reference content invariants", () => {
     ).toBe(true)
   })
 
+  test("dark-mode accent palette is muted, not high-saturation", () => {
+    // The previous fallback used --accent: #5eead4 (bright cyan-teal) and
+    // --accent-text: #99f6e4 (even brighter) in dark mode. When the agent
+    // styled .kd-list strong with var(--accent-text), every bold in a 10-item
+    // Key Technical Decisions section became bright teal — visually
+    // overwhelming. Reduced to --accent: #2dd4bf and --accent-text: #5eead4.
+    // The palette tweak is a safety net; the harder rule is in the next test.
+    expect(
+      /--accent:\s*#2dd4bf/.test(REFERENCE),
+      "Dark-mode --accent must be #2dd4bf (muted teal) in the fallback CSS, not #5eead4 (too saturated for body emphasis).",
+    ).toBe(true)
+    expect(
+      /--accent-text:\s*#5eead4/.test(REFERENCE),
+      "Dark-mode --accent-text must be #5eead4 in the fallback CSS, one notch less saturated than the previous #99f6e4.",
+    ).toBe(true)
+  })
+
+  test("forbids coloring body <strong> by default", () => {
+    // The fundamental fix: don't color <strong> by default. Bold weight alone
+    // carries emphasis; coloring every <strong> in a long list (e.g., 10+
+    // Key Technical Decisions) overwhelms the eye in dark mode regardless
+    // of which accent hue is chosen.
+    expect(
+      /Reserve `--accent`.*Do NOT color `<strong>`|Do NOT color `<strong>`.*by default|color: inherit/i.test(REFERENCE),
+      "Reference must instruct the agent NOT to color <strong> body text by default. The accent color is reserved for status chips, ID chips, links, and section borders.",
+    ).toBe(true)
+    expect(
+      /Color usage rules/i.test(REFERENCE),
+      "Reference must include a 'Color usage rules' section so the rule is discoverable, not buried in a single bullet.",
+    ).toBe(true)
+  })
+
+  test("diagram trigger fires per diagrammatic shape, not per diagram", () => {
+    // The earlier framing was a soft "Inline SVG flowcharts/sequences/data-flow
+    // for branching or temporal logic" — easy to answer "no" to. Real-world
+    // dogfood with architectural content (cli-printing-press cloak plan)
+    // produced zero SVGs because the rule had no trigger threshold. New
+    // framing: explicit triggers (3+ X) per shape category, multiple diagrams
+    // welcome when multiple shapes are present, anti-padding rule prevents
+    // redundancy.
+    expect(
+      /Diagrams: when and how many|Architecture trigger/i.test(REFERENCE),
+      "Reference must include a dedicated 'Diagrams: when and how many' section with explicit triggers, not a soft idiom buried in the affordance list.",
+    ).toBe(true)
+    expect(
+      /per diagrammatic shape, not per diagram|one diagram per shape/i.test(REFERENCE),
+      "Diagram rule must state the per-shape trigger logic explicitly so a plan with both topology AND a sequence renders two diagrams, not one combined.",
+    ).toBe(true)
+    // The five canonical shapes must be named so the agent recognizes them.
+    expect(/Component topology|component topology/i.test(REFERENCE)).toBe(true)
+    expect(/[Ss]equence/i.test(REFERENCE)).toBe(true)
+    expect(/[Ss]tate machine/i.test(REFERENCE)).toBe(true)
+    expect(/[Ff]lowchart/i.test(REFERENCE)).toBe(true)
+    expect(/[Dd]ata-?flow|[Dd]ata flow/i.test(REFERENCE)).toBe(true)
+    // Anti-padding rule must be present to prevent the agent from rendering
+    // redundant diagrams to look thorough.
+    expect(
+      /[Aa]nti-pattern.*padding|padding for thoroughness|redundant diagrams|each diagram add information/i.test(REFERENCE),
+      "Reference must include an anti-padding rule with the 'each diagram adds info not in the others' test, otherwise agents may render multiple views of the same architecture to look comprehensive.",
+    ).toBe(true)
+  })
+
+  test("default-closed for unit details collapsibles is explicit", () => {
+    // Earlier framing relied on 'expand only what they need' to imply
+    // closed-by-default. Real-world output (cloak plan) had <details open>
+    // on the Approach subsection — the agent filled in an unspecified
+    // default. Rule must be explicit.
+    expect(
+      /All collapsibles start closed|no `open` attribute|start closed.*no.*open/i.test(REFERENCE),
+      "Reference must state explicitly that <details> inside repeating cards start closed (no `open` attribute). Without this, agents fill in their own default and can leave subsections expanded.",
+    ).toBe(true)
+  })
+
   test("webfont CDN <link rel=\"stylesheet\"> is permitted with fallback (no internal contradiction)", () => {
     // An earlier draft had "Never emit a <link rel='stylesheet'> to an
     // external sheet" inside the active-recall block, while the Fallback
