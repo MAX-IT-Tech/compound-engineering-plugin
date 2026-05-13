@@ -390,6 +390,109 @@ describe("html-output.md reference content invariants", () => {
     ).toBe(true)
   })
 
+  // SVG layout-legibility rules. The 2026-05-12 cloak-browser plan dogfood
+  // had a topology diagram where a long curved arrow ran straight through
+  // two text labels ("DevToolsActivePort", "writes port"), and the arrow's
+  // own caption was disassociated from the arrow path. The agent designed
+  // coordinates by hand without rendering — the source looked fine, the
+  // rendered output had legibility bugs. These rules give the agent a
+  // pre-emit checklist of layout sins specific to hand-authored SVG.
+  describe("SVG layout-legibility rules", () => {
+    test("declares the layout-legibility section as load-bearing for hand-authored SVG", () => {
+      expect(
+        /Layout legibility \(load-bearing for hand-authored SVG\)/.test(REFERENCE),
+        "Reference must include a load-bearing 'Layout legibility' subsection in the Diagrams section so the agent runs the layout checks before emitting.",
+      ).toBe(true)
+    })
+
+    test("forbids arrow paths through text labels with a concrete fix", () => {
+      expect(
+        /No arrow path passes through a text label|arrow.*crosses a text label|arrow.*through.*label/i.test(REFERENCE),
+        "Reference must explicitly forbid arrow paths from passing through text labels — the actual rendering failure observed in dogfood.",
+      ).toBe(true)
+      // The fix must be named so the agent has a concrete tool, not just a
+      // prohibition. paint-order: stroke fill with a background-matched
+      // stroke is the cleanest CSS-only halo technique.
+      expect(
+        /paint-order: stroke fill|paint-order:\s*stroke fill|halo.*label|stroke.*matching the diagram background/i.test(REFERENCE),
+        "Reference must name a concrete fix (paint-order: stroke fill halo) for the arrow-through-label problem so the agent has a tool, not just a prohibition.",
+      ).toBe(true)
+    })
+
+    test("requires arrow labels adjacent to the arrow midpoint", () => {
+      // The dogfood had "attach via --cdp-url; CDP commands" floating well
+      // below the curve it described. Readers will not trace from a
+      // diagram-edge label back to its arrow.
+      expect(
+        /[Aa]rrow labels sit adjacent.*arrow's midpoint|adjacent to the arrow|10-15px|within ~10-15/i.test(REFERENCE),
+        "Reference must require arrow labels to sit adjacent to the arrow they describe (typically within ~10-15px of the midpoint), not at the diagram's edge.",
+      ).toBe(true)
+    })
+
+    test("warns against long curves traversing the diagram", () => {
+      // The "browser-use CLI → Cloak Chromium" arrow in the dogfood traversed
+      // the entire diagram, crossing multiple unrelated elements. The fix is
+      // either reordering boxes so connected components are adjacent, or
+      // numbered step badges instead of one long arrow.
+      expect(
+        /[Aa]void long curves|long curves.*traverse|long arrows.*crossing|long curve.*crosses/i.test(REFERENCE),
+        "Reference must warn against long curved arrows that traverse the diagram and cross multiple unrelated elements.",
+      ).toBe(true)
+      expect(
+        /reordering boxes|numbered step badges|labeled-channel notation/i.test(REFERENCE),
+        "Reference must name at least one concrete alternative to the long-curve antipattern (reorder boxes, numbered step badges, or short labeled-channel notation).",
+      ).toBe(true)
+    })
+
+    test("calls out component topology as the highest-risk shape for layout collisions", () => {
+      // Sequence diagrams and flowcharts have structural constraints
+      // (lifelines, vertical decision flow) that keep them legible. Topology
+      // diagrams with 5+ boxes and crossing arrows are where layout problems
+      // concentrate. Naming this explicitly helps the agent allocate
+      // attention.
+      expect(
+        /[Cc]omponent topology.*highest-risk|topology diagrams.*highest-risk|topology diagrams with 5\+ boxes|topology.*highest-risk/i.test(REFERENCE),
+        "Reference should call out component topology with 5+ boxes as the highest-risk shape for layout collisions, since sequence/flowchart structures self-constrain.",
+      ).toBe(true)
+    })
+  })
+
+  // Plan architecture diagrams are NOT wireframes — they should not carry
+  // the directional-only hedging that the wireframe affordance requires.
+  // The 2026-05-12 dogfood added "directional guidance for review, not
+  // implementation specification" before the plan SVGs and a "(directional,
+  // not implementation spec)" qualifier on a unit-card technical-design
+  // subsection. Plan diagrams render authoritative content; hedging
+  // language belongs to wireframes only.
+  describe("plan diagrams are not directional sketches", () => {
+    test("explicitly forbids hedging captions on plan architecture diagrams", () => {
+      expect(
+        /Plan architecture diagrams are not directional sketches|plan architecture diagrams render the same authoritative content|do not add hedging captions/i.test(REFERENCE),
+        "Reference must explicitly state that plan architecture diagrams are not directional sketches and do not carry the wireframe's hedging caption.",
+      ).toBe(true)
+    })
+
+    test("names the specific hedging phrases to avoid", () => {
+      // Concrete examples teach better than abstract principle. Cite at
+      // least one of the actual dogfood phrases so the agent recognizes
+      // the pattern.
+      expect(
+        /directional guidance for review, not implementation specification|treat as context, not code to reproduce|\(directional, not implementation spec\)/i.test(REFERENCE),
+        "Reference must cite at least one of the actual hedging phrases observed in dogfood (e.g., 'directional guidance for review, not implementation specification', 'treat as context, not code to reproduce', '(directional, not implementation spec)') so the agent recognizes the pattern by example.",
+      ).toBe(true)
+    })
+
+    test("ties the rule to the existing prose-is-authoritative principle", () => {
+      // Plan diagrams render the same content the prose renders. The
+      // existing "Prose is authoritative" rule already governs disagreement;
+      // a hedging caption is redundant and weakens the diagram.
+      expect(
+        /prose-is-authoritative rule already governs|prose-is-authoritative.*governs|same authoritative content as the surrounding prose|alternate rendering of the authoritative content/i.test(REFERENCE),
+        "Reference must tie the no-hedge rule to the existing prose-is-authoritative principle so the agent sees this as one consistent rule, not a new constraint.",
+      ).toBe(true)
+    })
+  })
+
   // Wireframe-mockup affordance: HTML-only, requirements-doc-only, with
   // explicit guardrails. The affordance was added to communicate visual
   // direction of user-facing surfaces during brainstorming WITHOUT slipping
