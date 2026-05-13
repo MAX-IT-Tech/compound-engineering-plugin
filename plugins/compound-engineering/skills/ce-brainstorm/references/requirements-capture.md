@@ -201,7 +201,7 @@ topic: <kebab-case-topic>
 
 ## Visual communication
 
-Include a visual aid when the requirements would be significantly easier to understand with one. Read `references/visual-communication.md` for the decision criteria, format selection, and placement rules.
+Visual aids are **load-bearing when content triggers fire**, not a soft recommendation. Include a visual for EVERY trigger the requirements doc satisfies: any Key Flow with 3+ steps OR 2+ actors handing off, 3+ behavioral modes/variants/states, 3+ interacting participants in Actors, an entity lifecycle with 3+ states, acceptance examples with 3+ branching steps, or multiple competing approaches under comparison. Each trigger gets its own visual (per-shape rule); multiple firing triggers produce multiple visuals, not one combined. Token cost is not a valid reason to skip a triggered visual. Read `references/visual-communication.md` for the full trigger table, format selection, placement rules, and the anti-padding test.
 
 ## When a document is warranted
 
@@ -224,7 +224,7 @@ Before finalizing:
 - Did implementation details leak in when they shouldn't have?
 - Do any requirements claim that infrastructure is absent without that claim having been verified against the codebase? If so, verify now or label as an unverified assumption.
 - Is there a low-cost change that would make this materially more useful?
-- Would a visual aid (flow diagram, comparison table, relationship diagram) help a reader grasp the requirements faster than prose alone?
+- **Visual-aid presence audit (load-bearing).** For each visual-communication trigger the requirements doc satisfies (Key Flow with 3+ steps, Key Flow with 2+ actor handoffs, 3+ behavioral modes, 3+ interacting participants in Actors, entity lifecycle with 3+ states, branching acceptance examples, multiple competing approaches), verify a corresponding visual aid is present. Count the firing triggers; count the visuals; the visual count must be at least the count of distinct trigger categories that fired. Missing a triggered visual is incomplete, not an optimization — return to add it before finalizing. Token cost is not a valid reason to fail this check.
 
 If planning would need to invent product behavior, scope boundaries, or success criteria, the brainstorm is not complete yet.
 
