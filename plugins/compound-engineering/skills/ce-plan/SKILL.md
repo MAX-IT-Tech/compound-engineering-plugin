@@ -375,28 +375,31 @@ Avoid:
 
 Each unit carries a stable plan-local **U-ID** assigned in Phase 3.5 (`U1`, `U2`, …). U-IDs survive reordering, splitting, and deletion: new units take the next unused number, gaps are fine, and existing IDs are never renumbered. This lets `ce-work` reference units unambiguously across plan edits.
 
-#### 3.4 High-Level Technical Design (Optional)
+#### 3.4 High-Level Technical Design (Load-bearing when triggers fire)
 
-Before detailing implementation units, decide whether an overview would help a reviewer validate the intended approach. This section communicates the *shape* of the solution — how pieces fit together — without dictating implementation.
+This section communicates the *shape* of the solution — how pieces fit together — without dictating implementation. It is NOT optional when the plan content satisfies any of the trigger conditions below.
 
-**When to include it:**
+**Architecture triggers (load-bearing).** Include a High-Level Technical Design section with the corresponding sketch type for EVERY trigger the plan satisfies:
 
-| Work involves... | Best overview form |
+| Trigger condition | Required sketch type |
 |---|---|
+| 3+ components with directed relationships (calls, flows, ownership) | Mermaid component or sequence diagram |
+| Inter-process protocol with 3+ named steps | Mermaid sequence diagram |
+| State machine with 3+ states | Mermaid state diagram |
+| Lifecycle (init → use → teardown) | Mermaid sequence or flowchart |
+| Branching logic with 3+ decision points | Mermaid flowchart |
+| Data transformation across 3+ stages | Mermaid data-flow or pipeline sketch |
+| Mode/flag combinations or multi-input behavior | Decision matrix (inputs → outcomes) |
 | DSL or API surface design | Pseudo-code grammar or contract sketch |
-| Multi-component integration | Mermaid sequence or component diagram |
-| Data pipeline or transformation | Data flow sketch |
-| State-heavy lifecycle | State diagram |
-| Complex branching logic | Flowchart |
-| Mode/flag combinations or multi-input behavior | Decision matrix (inputs -> outcomes) |
 | Single-component with non-obvious shape | Pseudo-code sketch |
 
-**When to skip it:**
-- Well-patterned work where prose and file paths tell the whole story
-- Straightforward CRUD or convention-following changes
-- Lightweight plans where the approach is obvious
+This is a hard rule on the same footing as the U-ID stability rule and the Implementation Unit field requirements. "I'll skip the sketch to save tokens" is NOT a valid reason to omit a triggered diagram. Recognizing a trigger and then skipping the sketch is a defect, not an optimization.
 
-Choose the medium that fits the work. Do not default to pseudo-code when a diagram communicates better, and vice versa.
+**Trigger fires per shape, not per section.** If the plan satisfies multiple triggers (e.g., 3+ components AND a 3+ state machine AND branching logic), include a separate sketch for each. One sketch combining all three would clutter; one per shape stays clear. Anti-padding rule: each sketch must add information the others don't. Don't render redundant views of the same content.
+
+**Skip the section only when NO trigger fires.** Well-patterned CRUD where prose plus file paths tells the whole story, lightweight plans where the approach is obvious, or convention-following changes — these don't satisfy any trigger and the section is omitted in full. But if even one trigger fires, the section is required.
+
+Choose the medium that fits each trigger. Do not default to pseudo-code when a diagram communicates better, and vice versa.
 
 Frame every sketch with: *"This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce."*
 
@@ -537,6 +540,7 @@ Before finalizing, check:
 - Test scenarios name specific inputs, actions, and expected outcomes without becoming test code
 - Feature-bearing units with blank or missing test scenarios are flagged as incomplete — feature-bearing units must have actual test scenarios, not just an annotation. The `Test expectation: none -- [reason]` annotation is only valid for non-feature-bearing units (pure config, scaffolding, styling)
 - Deferred items are explicit and not hidden as fake certainty
+- **High-Level Technical Design presence audit (load-bearing).** For each architecture trigger in Phase 3.4 that the plan content satisfies (3+ components with directed relationships, 3+ protocol steps, 3+ state machine states, lifecycle, 3+ decision points, 3+ data-flow stages, mode/flag combinations, DSL/API surface design, non-obvious single-component shape), verify a corresponding sketch/diagram is present in the High-Level Technical Design section. Count the firing triggers; count the sketches; the sketch count must be at least the count of distinct trigger categories that fired. Missing the section when a trigger fired, OR including the section but skipping a triggered sketch within it, is incomplete — return to Phase 3.4 and add the missing sketch. Token cost is not a valid reason to fail this check.
 - If a High-Level Technical Design section is included, it uses the right medium for the work, carries the non-prescriptive framing, and does not contain implementation code (no imports, exact signatures, or framework-specific syntax)
 - Per-unit technical design fields, if present, are concise and directional rather than copy-paste-ready
 - If the plan creates a new directory structure, would an Output Structure tree help reviewers see the overall shape?

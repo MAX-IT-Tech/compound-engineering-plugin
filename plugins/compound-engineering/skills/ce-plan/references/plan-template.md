@@ -151,15 +151,20 @@ deepened: YYYY-MM-DD  # optional, set when the confidence check substantively st
 
 ---
 
-<!-- Optional: Include this section only when the work involves DSL design, multi-component
-     integration, complex data flow, state-heavy lifecycle, or other cases where prose alone
-     would leave the approach shape ambiguous. Omit it entirely for well-patterned or
-     straightforward work. -->
+<!-- LOAD-BEARING when any architecture trigger fires (Phase 3.4 of ce-plan SKILL.md):
+     3+ components with directed relationships, inter-process protocol with 3+ steps,
+     state machine with 3+ states, lifecycle (init/use/teardown), 3+ decision points,
+     3+ data-flow stages, mode/flag combinations, DSL or API surface design, or
+     non-obvious single-component shape. Include one sketch per firing trigger
+     (multiple triggers → multiple sketches in this section). Omit the section in
+     full ONLY when NO trigger fires (well-patterned CRUD, convention-following changes,
+     or trivially obvious approaches). Token cost is not a valid reason to skip a
+     triggered sketch — see Phase 5.1 review checklist for the presence audit. -->
 ## High-Level Technical Design
 
 > *This illustrates the intended approach and is directional guidance for review, not implementation specification. The implementing agent should treat it as context, not code to reproduce.*
 
-[Pseudo-code grammar, mermaid diagram, data flow sketch, or state diagram — choose the medium that best communicates the solution shape for this work.]
+[Pseudo-code grammar, mermaid diagram, data flow sketch, or state diagram — choose the medium that best communicates the solution shape for this work. Multiple sketches go here when multiple triggers fire.]
 
 ---
 
