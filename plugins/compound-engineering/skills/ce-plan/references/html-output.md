@@ -79,16 +79,16 @@ Reach for these idioms when content warrants. None are required, except where th
 
 ## Diagrams: when and how many
 
-**Architecture trigger.** Render an inline SVG diagram when the doc describes any of these shapes:
+**Architecture trigger (load-bearing).** This is a hard rule on the same footing as the uniform-shape table rule, NOT a soft recommendation. Render an inline SVG diagram for EVERY shape category the doc satisfies:
 
-- 3+ components with directed relationships (calls, flows, ownership)
-- An inter-process protocol with 3+ named steps
-- A state machine with 3+ states
-- A lifecycle (initialization → use → teardown)
-- Branching logic with 3+ decision points
-- Data transformation across 3+ stages
+- 3+ components with directed relationships (calls, flows, ownership) → component topology
+- An inter-process protocol with 3+ named steps → sequence diagram
+- A state machine with 3+ states → state diagram
+- A lifecycle (initialization → use → teardown) → sequence or flowchart
+- Branching logic with 3+ decision points → flowchart
+- Data transformation across 3+ stages → data-flow diagram
 
-Prose alone is rarely the right rendering for these shapes. The trigger is content-driven, not length-driven.
+Prose alone is wrong for these shapes. The trigger is content-driven, not length-driven, and "I'll skip the SVG to save tokens" is NOT a valid reason to omit a triggered diagram. SVG composition is part of the content-driven rendering requirement; recognizing a trigger and then skipping the diagram is a defect, not an optimization. If the content satisfies a trigger, the diagram MUST be in the output.
 
 **Trigger fires per diagrammatic shape, not per diagram.** Diagrams come in distinct shapes:
 
@@ -205,8 +205,11 @@ Embed the same path and timestamp inside the frontmatter JSON block so programma
 
 ## Post-compose audit
 
-Before returning the artifact, scan it for common slips:
+Before returning the artifact, scan it for common slips. **Three of these are presence audits — they catch things that should be in the output but aren't. The most common dogfood failure is recognizing a trigger and then quietly skipping the corresponding rendering.**
 
+- **Diagram-presence audit (load-bearing).** For each architecture-trigger condition the doc satisfies (3+ components / 3+ protocol steps / 3+ states / lifecycle / 3+ decision points / 3+ data-flow stages), verify the output contains a matching `<svg>` element. Count the firing triggers; count the SVGs; the count of SVGs must be at least the count of distinct shape categories that fired. If a trigger fires but no SVG exists for that shape, the artifact is incomplete — compose the diagram and re-emit. Token cost is not an acceptable reason to fail this check.
+- **Table-presence audit.** For each section with 5+ items sharing uniform structure, verify the output contains a `<table>` (not a styled `<ul>`). Per the uniform-shape rule in Content-shape questions.
+- **Body-bold color audit.** Confirm `<strong>` in body content is NOT colored with `var(--accent)` / `var(--accent-text)`. The accent palette belongs on status chips, ID chips, links, and section borders only.
 - Each heading level (H2 / H3 / H4 / `<summary>`) is visually distinct from one another and from inline bold. Two collapsing levels (e.g., H3 styled as "smaller-bold" indistinguishable from `<strong>` text) is a defect.
 - No template placeholders (`{skill}`, `<value>`, `[plan title]`) leaked into output. Substitute with concrete values or rewrite as `<plan|brainstorm>`-style explicit notation.
 - Every anchored heading or row carries a visible permalink affordance (a `#` glyph beside the heading or row, opacity 0 by default and 1 on hover, with `href="#<id>"`).
@@ -214,3 +217,4 @@ Before returning the artifact, scan it for common slips:
 - If 5+ sections share identical card styling, at least one is varied. Total visual sameness is dull.
 - For each diagram, spatial position matches logical scope. Overrides, exceptions, and side-effects are spatially separated from the main flow.
 - Table column widths match the content shape rather than leaving prose columns squeezed by narrow label columns.
+- All `<details>` inside repeating cards have no `open` attribute. Defaulting any subsection open (even Approach) negates the scan-friendly compactness of the pattern.

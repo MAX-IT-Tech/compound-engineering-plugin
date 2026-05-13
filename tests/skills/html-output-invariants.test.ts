@@ -291,6 +291,45 @@ describe("html-output.md reference content invariants", () => {
     ).toBe(true)
   })
 
+  test("diagram trigger is load-bearing, not a soft recommendation", () => {
+    // The first version of the architecture trigger said "Render an inline SVG
+    // diagram when the doc describes any of these shapes" — phrased as a
+    // recommendation. Real-world dogfood with three triggers firing produced
+    // zero diagrams because the agent read it as optional. The fix is to mark
+    // it load-bearing (same weight as the uniform-shape rule) and explicitly
+    // reject token-economy as a skip reason.
+    expect(
+      /Architecture trigger \(load-bearing\)|hard rule on the same footing|NOT a soft recommendation/i.test(REFERENCE),
+      "Architecture trigger must carry the load-bearing marker so agents read it with the same enforcement weight as the uniform-shape table rule.",
+    ).toBe(true)
+    expect(
+      /[Tt]oken cost is not.*valid reason|NOT.*valid reason to (skip|omit) a triggered diagram|recognizing a trigger and then skipping/i.test(REFERENCE),
+      "Reference must explicitly forbid token-economy as a justification for skipping a triggered diagram. This was the actual failure mode observed in dogfood.",
+    ).toBe(true)
+  })
+
+  test("post-compose audit includes presence audits for missing diagrams, tables, and accent-bold misuse", () => {
+    // The earlier audit only flagged style issues in diagrams/tables THAT
+    // EXIST. It missed "the doc has 3+ components but no SVG diagram." This
+    // is the highest-value audit step because it catches the most common
+    // dogfood failure (agent saw trigger, agent skipped rendering).
+    const auditStart = REFERENCE.indexOf("## Post-compose audit")
+    expect(auditStart).toBeGreaterThan(-1)
+    const auditRegion = REFERENCE.slice(auditStart)
+    expect(
+      /[Dd]iagram-presence audit|count of SVGs must be at least|verify the output contains a matching `<svg>`/i.test(auditRegion),
+      "Post-compose audit must include a diagram-presence step: count the architecture triggers the content satisfies; count the SVGs in the output; the SVG count must be at least the count of firing trigger shapes.",
+    ).toBe(true)
+    expect(
+      /[Tt]able-presence audit|verify the output contains a `<table>`/i.test(auditRegion),
+      "Post-compose audit must also include a table-presence step (uniform-shape rule firing → <table> required, not <ul>).",
+    ).toBe(true)
+    expect(
+      /[Bb]ody-bold color audit|`<strong>`.*NOT.*colored|accent palette belongs on status chips/i.test(auditRegion),
+      "Post-compose audit must include a body-bold color audit confirming <strong> isn't colored by default.",
+    ).toBe(true)
+  })
+
   test("diagram trigger fires per diagrammatic shape, not per diagram", () => {
     // The earlier framing was a soft "Inline SVG flowcharts/sequences/data-flow
     // for branching or temporal logic" — easy to answer "no" to. Real-world
